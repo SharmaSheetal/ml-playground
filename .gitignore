@@ -19,3 +19,4 @@ frontend/node_modules/
 
 # Docker
 docker-compose.override.yml
+frontend/tsconfig.tsbuildinfo
