@@ -15,9 +15,9 @@ interface Props {
 type State = 'idle' | 'loading' | 'done' | 'error';
 
 const SOURCE_LABEL: Record<LLMSource, { label: string; color: string }> = {
-  'user-key':   { label: 'Your API key',    color: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/5'  },
-  'server-key': { label: 'Server AI',       color: 'text-indigo-400  border-indigo-500/30  bg-indigo-500/5'   },
-  'static':     { label: 'Static fallback', color: 'text-slate-400   border-slate-600/40   bg-slate-800/40'   },
+  'user-key':   { label: 'Your API key',    color: 'text-green-600 border-green-200 bg-green-50'  },
+  'server-key': { label: 'Server AI',       color: 'text-blue-600  border-blue-200  bg-blue-50'   },
+  'static':     { label: 'Static fallback', color: 'text-gray-500  border-gray-300  bg-gray-50'   },
 };
 
 function staticFallback(v1Traffic: number, metrics: Props['metrics']): string {
@@ -56,12 +56,12 @@ export function AIAdvisorPanel({ v1Traffic, metrics }: Props) {
   const srcMeta = source ? SOURCE_LABEL[source] : null;
 
   return (
-    <div className="border border-slate-800 rounded-xl overflow-hidden">
+    <div className="border border-gray-200 rounded-xl overflow-hidden">
       {/* ── Trigger row ── */}
       <div className="flex items-center justify-between px-5 py-3.5">
         <div>
-          <p className="text-xs font-mono font-semibold text-slate-300">AI Advisor</p>
-          <p className="text-xs text-slate-600 mt-0.5">
+          <p className="text-xs font-mono font-semibold text-gray-700">AI Advisor</p>
+          <p className="text-xs text-gray-400 mt-0.5">
             Ask the AI what to do with the current deployment state.
           </p>
         </div>
@@ -71,14 +71,14 @@ export function AIAdvisorPanel({ v1Traffic, metrics }: Props) {
           className={clsx(
             'flex items-center gap-2 px-4 py-2 rounded-lg border text-xs font-mono font-semibold transition-all',
             state === 'loading'
-              ? 'border-indigo-600/40 text-indigo-400/50 cursor-not-allowed'
-              : 'border-indigo-600/60 text-indigo-400 hover:border-indigo-400 hover:bg-indigo-500/5 active:scale-95'
+              ? 'border-blue-200 text-blue-300 cursor-not-allowed'
+              : 'border-blue-300 text-blue-600 hover:border-blue-400 hover:bg-blue-50 active:scale-95'
           )}
         >
           {state === 'loading' ? (
             <>
               <motion.span
-                className="w-1.5 h-1.5 rounded-full bg-indigo-400"
+                className="w-1.5 h-1.5 rounded-full bg-blue-500"
                 animate={{ opacity: [0.2, 1, 0.2] }}
                 transition={{ duration: 0.9, repeat: Infinity }}
               />
@@ -86,7 +86,7 @@ export function AIAdvisorPanel({ v1Traffic, metrics }: Props) {
             </>
           ) : (
             <>
-              <span className="text-indigo-500">✦</span>
+              <span className="text-blue-500">✦</span>
               {state === 'done' ? 'Ask again' : 'Ask AI'}
             </>
           )}
@@ -101,7 +101,7 @@ export function AIAdvisorPanel({ v1Traffic, metrics }: Props) {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.22 }}
-            className="overflow-hidden border-t border-slate-800"
+            className="overflow-hidden border-t border-gray-200"
           >
             <div className="px-5 py-4 space-y-3">
               {/* Source badge */}
@@ -117,11 +117,11 @@ export function AIAdvisorPanel({ v1Traffic, metrics }: Props) {
 
               {/* Warn */}
               {warn && (
-                <p className="text-xs text-amber-400 font-mono">{warn}</p>
+                <p className="text-xs text-amber-600 font-mono">{warn}</p>
               )}
 
               {/* Response text */}
-              <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
                 {text}
               </p>
 
@@ -133,8 +133,8 @@ export function AIAdvisorPanel({ v1Traffic, metrics }: Props) {
                   { label: 'v2 errors',  value: `${metrics.v2.errorRate}%`, alert: metrics.v2.errorRate > 1 },
                   { label: 'v1 P99',     value: `${metrics.v1.p99}ms`, alert: metrics.v1.p99 > 800 },
                 ].map(({ label, value, alert }) => (
-                  <span key={label} className="text-xs font-mono text-slate-500">
-                    {label}: <span className={clsx('font-semibold', alert ? 'text-red-400' : 'text-slate-300')}>{value}</span>
+                  <span key={label} className="text-xs font-mono text-gray-400">
+                    {label}: <span className={clsx('font-semibold', alert ? 'text-red-600' : 'text-gray-700')}>{value}</span>
                   </span>
                 ))}
               </div>

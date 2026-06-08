@@ -32,10 +32,10 @@ export function InsightBox({ text }: InsightBoxProps) {
 
           {/* Content */}
           <div>
-            <p className="text-xs font-mono font-semibold text-indigo-400 uppercase tracking-widest mb-1">
+            <p className="text-xs font-mono font-semibold text-blue-600 uppercase tracking-widest mb-1">
               Insight
             </p>
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm text-gray-700 leading-relaxed">
               {text}
             </p>
           </div>

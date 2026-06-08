@@ -58,17 +58,17 @@ export function TrafficSplitSimulator() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
             Traffic Split Playground
           </h1>
-          <p className="text-slate-500 text-sm mt-0.5">
+          <p className="text-gray-400 text-sm mt-0.5">
             Drag the slider · inject degradation · watch the system respond live.
           </p>
         </div>
         <div className="flex items-center gap-2 pt-1">
           <button
             onClick={() => setMuted((m) => !m)}
-            className="px-3 py-1.5 text-xs font-mono border border-slate-700 rounded-lg text-slate-400 hover:border-slate-500 transition-colors"
+            className="px-3 py-1.5 text-xs font-mono border border-gray-200 rounded-lg text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors"
           >
             {muted ? 'SFX OFF' : 'SFX ON'}
           </button>
@@ -77,8 +77,8 @@ export function TrafficSplitSimulator() {
             className={clsx(
               'px-3 py-1.5 text-xs font-mono border rounded-lg transition-colors',
               sim.running
-                ? 'border-emerald-600 text-emerald-400 hover:border-emerald-400'
-                : 'border-slate-700 text-slate-400 hover:border-slate-500'
+                ? 'border-green-300 text-green-700 bg-green-50'
+                : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
             )}
           >
             {sim.running ? 'RUNNING' : 'PAUSED'}
@@ -94,7 +94,7 @@ export function TrafficSplitSimulator() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25 }}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/40 bg-amber-500/8 text-amber-300 text-xs font-mono"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-600 text-xs font-mono"
           >
             <motion.span
               animate={{ opacity: [1, 0.3, 1] }}
@@ -115,11 +115,11 @@ export function TrafficSplitSimulator() {
       />
 
       {/* ── Traffic Controls ── */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 space-y-5">
+      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
         <div>
-          <div className="flex justify-between text-xs font-mono text-slate-400 mb-2">
+          <div className="flex justify-between text-xs font-mono text-gray-500 mb-2">
             <span>v1 (Stable)</span>
-            <span className="text-slate-200 font-semibold tabular-nums">
+            <span className="text-gray-800 font-semibold tabular-nums">
               {sim.v1Traffic}% / {100 - sim.v1Traffic}%
             </span>
             <span>v2 (Canary)</span>
@@ -154,8 +154,8 @@ export function TrafficSplitSimulator() {
             className={clsx(
               'py-2 px-4 text-xs font-mono rounded-lg border transition-all',
               sim.v1Degraded
-                ? 'bg-red-500/10 border-red-500/60 text-red-400'
-                : 'border-slate-700 text-slate-400 hover:border-indigo-500/50 hover:text-indigo-400'
+                ? 'bg-red-50 border-red-200 text-red-600'
+                : 'border-gray-200 text-gray-600 hover:border-indigo-500/50 hover:text-indigo-400'
             )}
           >
             {sim.v1Degraded ? 'DEGRADE v1  [active]' : 'DEGRADE v1'}
@@ -165,8 +165,8 @@ export function TrafficSplitSimulator() {
             className={clsx(
               'py-2 px-4 text-xs font-mono rounded-lg border transition-all',
               sim.v2Degraded
-                ? 'bg-red-500/10 border-red-500/60 text-red-400'
-                : 'border-slate-700 text-slate-400 hover:border-purple-500/50 hover:text-purple-400'
+                ? 'bg-red-50 border-red-200 text-red-600'
+                : 'border-gray-200 text-gray-600 hover:border-purple-500/50 hover:text-purple-400'
             )}
           >
             {sim.v2Degraded ? 'DEGRADE v2  [active]' : 'DEGRADE v2'}

@@ -13,15 +13,15 @@ interface MetricRowProps {
 
 function MetricRow({ label, value, highlight }: MetricRowProps) {
   return (
-    <div className="flex justify-between items-center py-1.5 border-b border-slate-800/60 last:border-0">
-      <span className="text-xs text-slate-500 font-mono">{label}</span>
+    <div className="flex justify-between items-center py-1.5 border-b border-gray-200 last:border-0">
+      <span className="text-xs text-gray-400 font-mono">{label}</span>
       <motion.span
         key={value}
         initial={{ opacity: 0, y: -4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
         className={clsx('text-xs font-mono font-semibold tabular-nums',
-          highlight ? 'text-red-400' : 'text-slate-200')}
+          highlight ? 'text-red-600' : 'text-gray-800')}
       >
         {value}
       </motion.span>
@@ -37,16 +37,16 @@ interface MetricCardProps {
 }
 
 export function MetricCard({ version, label, metrics, degraded }: MetricCardProps) {
-  const accent   = version === 'v1' ? 'border-indigo-500/30' : 'border-purple-500/30';
-  const glow     = version === 'v1' ? 'shadow-indigo-500/10' : 'shadow-purple-500/10';
-  const dot      = metrics.status === 'healthy' ? 'bg-emerald-400' : 'bg-red-400';
+  const accent   = version === 'v1' ? 'border-blue-200' : 'border-purple-200';
+  const glow     = version === 'v1' ? 'shadow-blue-100' : 'shadow-purple-100';
+  const dot      = metrics.status === 'healthy' ? 'bg-green-500' : 'bg-red-500';
   const dotPulse = metrics.status === 'degraded';
 
   return (
-    <div className={clsx('bg-slate-900/80 border rounded-xl p-4 shadow-lg', accent, glow)}>
+    <div className={clsx('bg-white border rounded-xl p-4 shadow-lg', accent, glow)}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-widest">
+        <span className="text-xs font-mono font-bold text-gray-700 uppercase tracking-widest">
           {label}
         </span>
         <div className="flex items-center gap-1.5">
@@ -56,7 +56,7 @@ export function MetricCard({ version, label, metrics, degraded }: MetricCardProp
             transition={{ duration: 0.5, repeat: Infinity }}
           />
           <Tooltip {...JARGON.degraded}>
-            <span className={clsx('text-xs font-mono', dotPulse ? 'text-red-400' : 'text-emerald-400')}>
+            <span className={clsx('text-xs font-mono', dotPulse ? 'text-red-600' : 'text-green-600')}>
               {metrics.status}
             </span>
           </Tooltip>

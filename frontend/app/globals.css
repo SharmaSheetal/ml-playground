@@ -4,9 +4,23 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
+    color-scheme: light;
   }
+
   body {
-    @apply bg-slate-950 text-slate-100 antialiased;
+    background-color: #FAFAFA;
+    color: #111827;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+
+  ::selection {
+    background-color: #DBEAFE;
+    color: #1D4ED8;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #F9FAFB; }
+  ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
 }

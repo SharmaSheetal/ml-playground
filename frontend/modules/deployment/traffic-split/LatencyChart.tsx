@@ -14,19 +14,19 @@ interface LatencyChartProps {
 export function LatencyChart({ history, threshold }: LatencyChartProps) {
   if (history.length < 2) {
     return (
-      <div className="h-52 flex items-center justify-center text-slate-600 text-xs font-mono">
+      <div className="h-52 flex items-center justify-center text-gray-400 text-xs font-mono">
         Collecting data...
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+    <div className="bg-white border border-gray-200 rounded-xl p-4">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-xs font-mono text-slate-400 uppercase tracking-widest">
+        <p className="text-xs font-mono text-gray-500 uppercase tracking-widest">
           P50 Latency — Live (ms)
         </p>
-        <div className="flex items-center gap-3 text-xs font-mono text-slate-500">
+        <div className="flex items-center gap-3 text-xs font-mono text-gray-400">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-0.5 bg-indigo-400 inline-block" /> v1
           </span>
@@ -52,19 +52,19 @@ export function LatencyChart({ history, threshold }: LatencyChartProps) {
             </linearGradient>
           </defs>
 
-          <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid stroke="#e5e7eb" strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="t" hide />
           <YAxis
             width={46}
-            tick={{ fill: '#475569', fontSize: 10, fontFamily: 'monospace' }}
+            tick={{ fill: '#9ca3af', fontSize: 10, fontFamily: 'monospace' }}
             tickLine={false}
             axisLine={false}
             tickFormatter={(v) => `${v}ms`}
           />
           <Tooltip
             contentStyle={{
-              background: '#0f172a',
-              border: '1px solid #1e293b',
+              background: '#ffffff',
+              border: '1px solid #e5e7eb',
               borderRadius: 8,
               fontSize: 11,
               fontFamily: 'monospace',

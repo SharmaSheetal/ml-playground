@@ -27,7 +27,7 @@ interface ProfileEditorProps {
 }
 
 function ProfileEditor({ version, profile, onChange, onInsight }: ProfileEditorProps) {
-  const accent = version === 'v1' ? 'text-indigo-400' : 'text-purple-400';
+  const accent = version === 'v1' ? 'text-blue-600' : 'text-purple-600';
   const fields: Array<{
     key: 'p50' | 'p99' | 'errorRate';
     label: React.ReactNode;
@@ -46,7 +46,7 @@ function ProfileEditor({ version, profile, onChange, onInsight }: ProfileEditorP
       <div className="grid grid-cols-3 gap-2">
         {fields.map(({ key, label, min, max, step }) => (
           <div key={key}>
-            <label className="text-xs text-slate-500 font-mono block mb-1">{label}</label>
+            <label className="text-xs text-gray-400 font-mono block mb-1">{label}</label>
             <input
               type="number"
               min={min} max={max} step={step}
@@ -56,7 +56,7 @@ function ProfileEditor({ version, profile, onChange, onInsight }: ProfileEditorP
                 onChange(updated);
                 onInsight(getInsight('profile-change', { version, p50: updated.p50, p99: updated.p99 }));
               }}
-              className="w-full bg-slate-800 border border-slate-700 rounded-md px-2 py-1.5 text-xs text-slate-200 font-mono focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full bg-gray-50 border border-gray-200 rounded-md px-2 py-1.5 text-xs text-gray-800 font-mono focus:outline-none focus:border-indigo-500 transition-colors"
             />
           </div>
         ))}
@@ -79,15 +79,15 @@ export function ConfigPanel({ config, onChange, onInsight }: ConfigPanelProps) {
   }
 
   return (
-    <div className="border border-slate-800 rounded-xl overflow-hidden">
+    <div className="border border-gray-200 rounded-xl overflow-hidden">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex justify-between items-center px-5 py-3.5 hover:bg-slate-900/30 transition-colors"
+        className="w-full flex justify-between items-center px-5 py-3.5 hover:bg-gray-50 transition-colors"
       >
-        <span className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-widest">
+        <span className="text-xs font-mono font-semibold text-gray-500 uppercase tracking-widest">
           Advanced Config
         </span>
-        <span className="text-slate-600 text-xs">{open ? '▲' : '▼'}</span>
+        <span className="text-gray-400 text-xs">{open ? '▲' : '▼'}</span>
       </button>
 
       <AnimatePresence>
@@ -99,15 +99,15 @@ export function ConfigPanel({ config, onChange, onInsight }: ConfigPanelProps) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-5 pb-5 pt-3 border-t border-slate-800 space-y-5">
+            <div className="px-5 pb-5 pt-3 border-t border-gray-200 space-y-5">
 
               {/* ── Row 1: RPS + Speed ── */}
               <div className="grid grid-cols-2 gap-5">
                 {/* Total RPS */}
                 <div>
                   <div className="flex justify-between mb-1.5">
-                    <label className="text-xs text-slate-500 font-mono">Total RPS</label>
-                    <span className="text-xs text-slate-300 font-mono font-semibold">
+                    <label className="text-xs text-gray-400 font-mono">Total RPS</label>
+                    <span className="text-xs text-gray-700 font-mono font-semibold">
                       {config.totalRps.toLocaleString()}
                     </span>
                   </div>
@@ -120,16 +120,16 @@ export function ConfigPanel({ config, onChange, onInsight }: ConfigPanelProps) {
                       set('totalRps', v);
                       onInsight(getInsight('rps-change', { rps: v }));
                     }}
-                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-slate-700 accent-indigo-500"
+                    className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-gray-200 accent-indigo-500"
                   />
-                  <div className="flex justify-between text-xs text-slate-600 font-mono mt-1">
+                  <div className="flex justify-between text-xs text-gray-400 font-mono mt-1">
                     <span>100</span><span>5k</span>
                   </div>
                 </div>
 
                 {/* Sim Speed */}
                 <div>
-                  <label className="text-xs text-slate-500 font-mono block mb-1.5">Sim Speed</label>
+                  <label className="text-xs text-gray-400 font-mono block mb-1.5">Sim Speed</label>
                   <div className="flex gap-1.5">
                     {SPEEDS.map((s) => (
                       <button
@@ -141,8 +141,8 @@ export function ConfigPanel({ config, onChange, onInsight }: ConfigPanelProps) {
                         className={clsx(
                           'flex-1 py-1.5 text-xs font-mono rounded-lg border transition-colors',
                           config.speed === s.value
-                            ? 'border-indigo-500 bg-indigo-500/10 text-indigo-300'
-                            : 'border-slate-700 text-slate-500 hover:border-slate-500'
+                            ? 'border-blue-300 bg-blue-50 text-blue-600'
+                            : 'border-gray-200 text-gray-400 hover:border-gray-300'
                         )}
                       >
                         {s.label}
@@ -170,7 +170,7 @@ export function ConfigPanel({ config, onChange, onInsight }: ConfigPanelProps) {
 
               {/* ── Row 3: Degradation mode ── */}
               <div>
-                <label className="text-xs text-slate-500 font-mono block mb-2 uppercase tracking-widest">
+                <label className="text-xs text-gray-400 font-mono block mb-2 uppercase tracking-widest">
                   Degradation Mode
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -184,29 +184,29 @@ export function ConfigPanel({ config, onChange, onInsight }: ConfigPanelProps) {
                       className={clsx(
                         'text-left p-3 rounded-lg border text-xs transition-colors',
                         config.degradationMode === m.value
-                          ? 'border-indigo-500/50 bg-indigo-500/8 text-slate-200'
-                          : 'border-slate-700 text-slate-500 hover:border-slate-600 hover:text-slate-400'
+                          ? 'border-blue-200 bg-blue-50 text-gray-800'
+                          : 'border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500'
                       )}
                     >
                       <div className="font-semibold font-mono mb-1">{m.label}</div>
-                      <div className="text-slate-500 text-xs leading-tight">{m.desc}</div>
+                      <div className="text-gray-400 text-xs leading-tight">{m.desc}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* ── Row 4: Auto-rollback ── */}
-              <div className="flex items-center justify-between p-3.5 rounded-lg border border-slate-800 bg-slate-900/40">
+              <div className="flex items-center justify-between p-3.5 rounded-lg border border-gray-200 bg-gray-50">
                 <div>
-                  <p className="text-xs font-mono font-semibold text-slate-300">Auto-rollback</p>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs font-mono font-semibold text-gray-700">Auto-rollback</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
                     Shift 100% to v1 when v2 P99 breaches threshold
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0 ml-4">
                   {config.autoRollback && (
                     <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-slate-500 font-mono">P99 &gt;</span>
+                      <span className="text-xs text-gray-400 font-mono">P99 &gt;</span>
                       <input
                         type="number"
                         min={100} max={10000} step={50}
@@ -216,9 +216,9 @@ export function ConfigPanel({ config, onChange, onInsight }: ConfigPanelProps) {
                           set('autoRollbackThreshold', v);
                           onInsight(getInsight('rollback-threshold', { threshold: v }));
                         }}
-                        className="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs font-mono text-slate-200 focus:outline-none focus:border-indigo-500"
+                        className="w-20 bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs font-mono text-gray-800 focus:outline-none focus:border-indigo-500"
                       />
-                      <span className="text-xs text-slate-500 font-mono">ms</span>
+                      <span className="text-xs text-gray-400 font-mono">ms</span>
                     </div>
                   )}
                   {/* Toggle */}
@@ -230,7 +230,7 @@ export function ConfigPanel({ config, onChange, onInsight }: ConfigPanelProps) {
                     }}
                     className={clsx(
                       'relative w-10 h-5 rounded-full transition-colors',
-                      config.autoRollback ? 'bg-indigo-600' : 'bg-slate-700'
+                      config.autoRollback ? 'bg-indigo-600' : 'bg-gray-300'
                     )}
                   >
                     <motion.span

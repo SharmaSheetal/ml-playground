@@ -20,16 +20,16 @@ export function CanaryReleaseSimulator() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-100 tracking-tight">
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
             Canary Release Stepper
           </h1>
-          <p className="text-slate-500 text-sm mt-0.5">
+          <p className="text-gray-400 text-sm mt-0.5">
             Start the canary · inject faults · watch gates evaluate · promote or roll back.
           </p>
         </div>
         <button
           onClick={reset}
-          className="px-3 py-1.5 text-xs font-mono border border-slate-700 rounded-lg text-slate-400 hover:border-slate-500 transition-colors mt-1"
+          className="px-3 py-1.5 text-xs font-mono border border-gray-200 rounded-lg text-gray-600 hover:border-gray-300 hover:bg-gray-50 transition-colors mt-1"
         >
           RESET
         </button>

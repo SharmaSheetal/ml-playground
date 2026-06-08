@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { ask, type LLMSource } from '@/lib/llm';
 import { RichText } from '@/components/RichText';
 import {
@@ -10,6 +12,15 @@ import {
   quizKey, practiceKey, buildBatchPrompt, parseQuestionBatch,
 } from '@/lib/questionCache';
 import type { StudySection } from '@/modules/deployment/traffic-split/content';
+
+// ── Accent color lookup (literal strings — required for Tailwind purge) ───────
+const ACCENT: Record<string, { activeBg: string; bar: string; numOn: string; numOff: string }> = {
+  blue:   { activeBg: 'bg-blue-50',   bar: 'bg-blue-500',   numOn: 'bg-blue-100 text-blue-700',   numOff: 'bg-gray-100 text-gray-400' },
+  amber:  { activeBg: 'bg-amber-50',  bar: 'bg-amber-500',  numOn: 'bg-amber-100 text-amber-700',  numOff: 'bg-gray-100 text-gray-400' },
+  cyan:   { activeBg: 'bg-cyan-50',   bar: 'bg-cyan-500',   numOn: 'bg-cyan-100 text-cyan-700',   numOff: 'bg-gray-100 text-gray-400' },
+  orange: { activeBg: 'bg-orange-50', bar: 'bg-orange-500', numOn: 'bg-orange-100 text-orange-700', numOff: 'bg-gray-100 text-gray-400' },
+  indigo: { activeBg: 'bg-blue-50',   bar: 'bg-blue-500',   numOn: 'bg-blue-100 text-blue-700',   numOff: 'bg-gray-100 text-gray-400' },
+};
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -104,15 +115,14 @@ function buildSectionFallback(heading: string): string {
 }
 
 function signalColor(sig: string) {
-  if (sig.toLowerCase().includes('strong')) return 'text-emerald-400 border-emerald-500/30 bg-emerald-500/8';
-  if (sig.toLowerCase().includes('borderline')) return 'text-amber-400 border-amber-500/30 bg-amber-500/8';
-  return 'text-red-400 border-red-500/30 bg-red-500/8';
+  if (sig.toLowerCase().includes('strong'))     return 'text-green-700 border-green-200 bg-green-50';
+  if (sig.toLowerCase().includes('borderline')) return 'text-amber-700 border-amber-200 bg-amber-50';
+  return 'text-red-700 border-red-200 bg-red-50';
 }
 
-// ── SectionCard ───────────────────────────────────────────────────────────────
+// ── Section content (shown in main panel) ─────────────────────────────────────
 
-function SectionCard({ section }: { section: StudySection }) {
-  const [open,      setOpen]      = useState(false);
+function SectionContent({ section }: { section: StudySection }) {
   const [activeTab, setActiveTab] = useState<'quiz' | 'practice' | 'ask'>('quiz');
   const [quiz,      setQuiz]      = useState<QuizState>({ phase: 'idle', question: '', source: null, warn: '' });
   const [miniMsgs,  setMiniMsgs]  = useState<MiniMsg[]>([]);
@@ -131,7 +141,7 @@ function SectionCard({ section }: { section: StudySection }) {
   }, [practice.phase]);
 
   async function handleQuiz() {
-    setOpen(true); setActiveTab('quiz');
+    setActiveTab('quiz');
     setQuiz({ phase: 'loading', question: '', source: null, warn: '' });
     const cacheK = quizKey(section.heading);
     const cached = popQuestion(cacheK);
@@ -204,287 +214,267 @@ function SectionCard({ section }: { section: StudySection }) {
   }
 
   return (
-    <div className="border border-slate-800 rounded-xl overflow-visible">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-900/40 transition-colors rounded-xl"
-      >
-        <span className="text-sm font-semibold text-slate-200">{section.heading}</span>
-        <span className="text-slate-600 text-xs ml-4 shrink-0">{open ? '▲' : '▼'}</span>
-      </button>
+    <div className="space-y-6">
+      {/* Body */}
+      <div className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+        <RichText text={section.body} />
+      </div>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            className="overflow-visible"
-          >
-            <div className="px-5 pb-5 border-t border-slate-800 space-y-4">
-              <p className="text-sm text-slate-400 leading-relaxed whitespace-pre-line pt-4">
-                <RichText text={section.body} />
-              </p>
+      {/* Practice tools */}
+      <div className="border-t border-gray-100 pt-5">
+        <div className="flex items-center gap-1 mb-4">
+          {(['quiz', 'practice', 'ask'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={clsx(
+                'px-3 py-1.5 text-xs font-medium rounded border transition-all',
+                activeTab === tab
+                  ? tab === 'practice'
+                    ? 'border-violet-300 bg-violet-50 text-violet-700'
+                    : 'border-blue-300 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300 bg-white'
+              )}
+            >
+              {tab === 'quiz' ? 'Quiz me' : tab === 'practice' ? 'Practice' : 'Ask AI'}
+            </button>
+          ))}
+        </div>
 
-              <div className="border-t border-slate-800/60 pt-3">
-                <div className="flex items-center gap-1 mb-3">
-                  {(['quiz', 'practice', 'ask'] as const).map(tab => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={clsx(
-                        'px-3 py-1.5 text-xs font-mono rounded-lg border transition-all',
-                        activeTab === tab
-                          ? tab === 'practice'
-                            ? 'border-violet-500/50 bg-violet-500/8 text-violet-400'
-                            : 'border-indigo-500/50 bg-indigo-500/8 text-indigo-400'
-                          : 'border-slate-800 text-slate-600 hover:text-slate-400 hover:border-slate-700'
-                      )}
-                    >
-                      {tab === 'quiz' ? '✦ Quiz me' : tab === 'practice' ? '⚡ Practice' : '✧ Ask AI'}
-                    </button>
-                  ))}
-                </div>
+        {/* Quiz tab */}
+        {activeTab === 'quiz' && (
+          <div className="space-y-3">
+            <button
+              onClick={handleQuiz}
+              disabled={quiz.phase === 'loading'}
+              className={clsx(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded border text-xs font-medium transition-all',
+                quiz.phase === 'loading'
+                  ? 'border-blue-200 text-blue-400 cursor-not-allowed bg-blue-50/50'
+                  : 'border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100 active:scale-95'
+              )}
+            >
+              {quiz.phase === 'loading' ? (
+                <>
+                  <motion.span className="w-1.5 h-1.5 rounded-full bg-blue-400"
+                    animate={{ opacity: [0.2, 1, 0.2] }}
+                    transition={{ duration: 0.9, repeat: Infinity }} />
+                  Generating…
+                </>
+              ) : quiz.phase === 'done' ? 'New question' : 'Generate question'}
+            </button>
 
-                {/* Quiz tab */}
-                {activeTab === 'quiz' && (
-                  <div className="space-y-3">
-                    <button
-                      onClick={handleQuiz}
-                      disabled={quiz.phase === 'loading'}
-                      className={clsx(
-                        'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-mono transition-all',
-                        quiz.phase === 'loading'
-                          ? 'border-indigo-600/30 text-indigo-400/50 cursor-not-allowed'
-                          : 'border-indigo-600/50 text-indigo-400 hover:border-indigo-400 hover:bg-indigo-500/5 active:scale-95'
-                      )}
-                    >
-                      {quiz.phase === 'loading' ? (
-                        <>
-                          <motion.span className="w-1.5 h-1.5 rounded-full bg-indigo-400"
-                            animate={{ opacity: [0.2, 1, 0.2] }}
-                            transition={{ duration: 0.9, repeat: Infinity }} />
-                          Generating…
-                        </>
-                      ) : quiz.phase === 'done' ? 'New question' : 'Generate question'}
-                    </button>
-
-                    <AnimatePresence>
-                      {quiz.phase === 'done' && quiz.question && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-                          className="relative px-4 py-3.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5"
-                        >
-                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-indigo-500/50 rounded-l-xl" />
-                          <p className="text-xs font-mono text-indigo-400 uppercase tracking-widest mb-2">Interview question</p>
-                          {quiz.warn && <p className="text-xs text-amber-400 font-mono mb-1">{quiz.warn}</p>}
-                          <p className="text-sm text-slate-200 leading-relaxed">{quiz.question}</p>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )}
-
-                {/* Practice tab */}
-                {activeTab === 'practice' && (
-                  <div className="space-y-3">
-                    {practice.phase === 'idle' && (
-                      <div className="space-y-2">
-                        <p className="text-xs text-slate-500 font-mono">
-                          AI generates a question → you answer → AI evaluates with structured feedback.
-                        </p>
-                        <button
-                          onClick={handleStartPractice}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-violet-600/50 text-violet-400 text-xs font-mono hover:border-violet-400 hover:bg-violet-500/5 active:scale-95 transition-all"
-                        >
-                          ⚡ Start interview practice
-                        </button>
-                      </div>
-                    )}
-
-                    {practice.phase === 'generating' && (
-                      <div className="flex items-center gap-2 py-2">
-                        {[0, 0.15, 0.3].map(d => (
-                          <motion.span key={d} className="w-1.5 h-1.5 rounded-full bg-violet-400"
-                            animate={{ opacity: [0.2, 1, 0.2], y: [0, -3, 0] }}
-                            transition={{ duration: 0.8, delay: d, repeat: Infinity }} />
-                        ))}
-                        <span className="text-xs text-violet-400 font-mono">Generating question…</span>
-                      </div>
-                    )}
-
-                    {practice.phase === 'answering' && (
-                      <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-                        <div className="relative px-4 py-3.5 rounded-xl border border-violet-500/25 bg-violet-500/5">
-                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-500/60 rounded-l-xl" />
-                          <p className="text-xs font-mono text-violet-400 uppercase tracking-widest mb-2">Question</p>
-                          <p className="text-sm text-slate-200 leading-relaxed">{practice.question}</p>
-                        </div>
-                        <textarea
-                          ref={answerRef}
-                          value={practice.answer}
-                          onChange={e => setPractice(p => ({ ...p, answer: e.target.value }))}
-                          onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmitAnswer(); }}
-                          placeholder="Type your answer… (⌘ Enter to submit)"
-                          rows={4}
-                          className="w-full bg-slate-900/60 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-600 font-mono leading-relaxed focus:outline-none focus:border-violet-500/50 resize-none transition-colors"
-                        />
-                        <button
-                          onClick={handleSubmitAnswer}
-                          disabled={!practice.answer.trim()}
-                          className={clsx(
-                            'px-4 py-2 rounded-lg border text-xs font-mono font-semibold transition-all',
-                            !practice.answer.trim()
-                              ? 'border-slate-800 text-slate-700 cursor-not-allowed'
-                              : 'border-violet-600/50 text-violet-400 hover:border-violet-400 hover:bg-violet-500/5 active:scale-95'
-                          )}
-                        >
-                          Submit answer
-                        </button>
-                      </motion.div>
-                    )}
-
-                    {practice.phase === 'evaluating' && (
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-                        <div className="relative px-4 py-3.5 rounded-xl border border-violet-500/25 bg-violet-500/5">
-                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-500/60 rounded-l-xl" />
-                          <p className="text-xs font-mono text-violet-400 uppercase tracking-widest mb-2">Question</p>
-                          <p className="text-sm text-slate-200 leading-relaxed">{practice.question}</p>
-                        </div>
-                        <div className="px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/30 opacity-60">
-                          <p className="text-xs text-slate-500 font-mono mb-1">Your answer</p>
-                          <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-line">{practice.answer}</p>
-                        </div>
-                        <div className="flex items-center gap-2 py-1">
-                          {[0, 0.15, 0.3].map(d => (
-                            <motion.span key={d} className="w-1.5 h-1.5 rounded-full bg-violet-400"
-                              animate={{ opacity: [0.2, 1, 0.2], y: [0, -3, 0] }}
-                              transition={{ duration: 0.8, delay: d, repeat: Infinity }} />
-                          ))}
-                          <span className="text-xs text-violet-400 font-mono">Evaluating…</span>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {practice.phase === 'done' && practice.feedback && (
-                      <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-                        <div className="relative px-4 py-3 rounded-xl border border-violet-500/20 bg-violet-500/4">
-                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-500/50 rounded-l-xl" />
-                          <p className="text-xs font-mono text-violet-400 mb-1">Question</p>
-                          <p className="text-xs text-slate-300 leading-relaxed">{practice.question}</p>
-                        </div>
-                        <div className="px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/20">
-                          <p className="text-xs text-slate-600 font-mono mb-1">Your answer</p>
-                          <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-line">{practice.answer}</p>
-                        </div>
-                        {practice.warn && <p className="text-xs text-amber-400 font-mono px-1">{practice.warn}</p>}
-                        <div className="px-4 py-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
-                          <p className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest mb-2">Got right</p>
-                          <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line">{practice.feedback.gotRight}</p>
-                        </div>
-                        <div className="px-4 py-3 rounded-xl border border-red-500/20 bg-red-500/5">
-                          <p className="text-xs font-mono font-bold text-red-400 uppercase tracking-widest mb-2">Missed</p>
-                          <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line">{practice.feedback.missed}</p>
-                        </div>
-                        <div className="px-4 py-3 rounded-xl border border-indigo-500/20 bg-indigo-500/5">
-                          <p className="text-xs font-mono font-bold text-indigo-400 uppercase tracking-widest mb-2">Follow-up</p>
-                          <p className="text-xs text-slate-300 leading-relaxed">{practice.feedback.followUp}</p>
-                        </div>
-                        <div className={clsx('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-mono font-semibold', signalColor(practice.feedback.signal))}>
-                          <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0" />
-                          {practice.feedback.signal}
-                        </div>
-                        <button
-                          onClick={handleStartPractice}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-violet-600/40 text-violet-400/70 text-xs font-mono hover:border-violet-500/60 hover:text-violet-400 hover:bg-violet-500/5 active:scale-95 transition-all"
-                        >
-                          ⚡ New question
-                        </button>
-                      </motion.div>
-                    )}
-                  </div>
-                )}
-
-                {/* Ask AI tab */}
-                {activeTab === 'ask' && (
-                  <div className="space-y-3">
-                    {miniMsgs.length > 0 && (
-                      <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-                        <AnimatePresence initial={false}>
-                          {miniMsgs.map(msg => (
-                            <motion.div key={msg.id}
-                              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.15 }}
-                            >
-                              {msg.role === 'user' && (
-                                <div className="flex justify-end">
-                                  <div className="max-w-[80%] bg-indigo-600/12 border border-indigo-500/20 rounded-xl rounded-tr-sm px-3 py-2">
-                                    <p className="text-xs text-slate-300 leading-relaxed">{msg.text}</p>
-                                  </div>
-                                </div>
-                              )}
-                              {msg.role === 'thinking' && (
-                                <div className="flex gap-2 items-center">
-                                  <div className="w-5 h-5 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-                                    <span className="text-indigo-400 font-bold" style={{ fontSize: 8 }}>AI</span>
-                                  </div>
-                                  <div className="inline-flex gap-1 px-3 py-2 bg-slate-800/60 border border-slate-700 rounded-xl rounded-tl-sm">
-                                    {[0, 0.2, 0.4].map(d => (
-                                      <motion.span key={d} className="w-1 h-1 rounded-full bg-slate-500"
-                                        animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
-                                        transition={{ duration: 0.9, delay: d, repeat: Infinity }} />
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              {msg.role === 'ai' && (
-                                <div className="flex gap-2 items-start">
-                                  <div className="w-5 h-5 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                                    <span className="text-indigo-400 font-bold" style={{ fontSize: 8 }}>AI</span>
-                                  </div>
-                                  <div className="bg-slate-800/60 border border-slate-700 rounded-xl rounded-tl-sm px-3 py-2">
-                                    <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-line">{msg.text}</p>
-                                  </div>
-                                </div>
-                              )}
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                        <div ref={chatEndRef} />
-                      </div>
-                    )}
-                    <div className="flex gap-2 items-end">
-                      <input
-                        type="text"
-                        value={miniInput}
-                        onChange={e => setMiniInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') handleAskSend(); }}
-                        placeholder={`Ask about "${section.heading}"…`}
-                        disabled={miniWait}
-                        className="flex-1 bg-slate-900/60 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-600 font-mono focus:outline-none focus:border-indigo-500/50 transition-colors"
-                      />
-                      <button
-                        onClick={handleAskSend}
-                        disabled={!miniInput.trim() || miniWait}
-                        className={clsx(
-                          'px-3 py-2 rounded-lg border text-xs font-mono transition-all',
-                          !miniInput.trim() || miniWait
-                            ? 'border-slate-800 text-slate-700 cursor-not-allowed'
-                            : 'border-indigo-600/50 text-indigo-400 hover:border-indigo-400 hover:bg-indigo-500/5 active:scale-95'
-                        )}
-                      >
-                        {miniWait ? '…' : 'Ask'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
+            <AnimatePresence>
+              {quiz.phase === 'done' && quiz.question && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+                  className="relative px-4 py-3.5 rounded-lg border border-blue-200 bg-blue-50"
+                >
+                  <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-400 rounded-l-lg" />
+                  <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest mb-2">Interview question</p>
+                  {quiz.warn && <p className="text-xs text-amber-600 mb-1">{quiz.warn}</p>}
+                  <p className="text-sm text-gray-800 leading-relaxed">{quiz.question}</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         )}
-      </AnimatePresence>
+
+        {/* Practice tab */}
+        {activeTab === 'practice' && (
+          <div className="space-y-3">
+            {practice.phase === 'idle' && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500">
+                  AI generates a question, you answer, AI evaluates with structured feedback.
+                </p>
+                <button
+                  onClick={handleStartPractice}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-violet-300 text-violet-700 bg-violet-50 text-xs font-medium hover:bg-violet-100 active:scale-95 transition-all"
+                >
+                  Start practice
+                </button>
+              </div>
+            )}
+
+            {practice.phase === 'generating' && (
+              <div className="flex items-center gap-2 py-2">
+                {[0, 0.15, 0.3].map(d => (
+                  <motion.span key={d} className="w-1.5 h-1.5 rounded-full bg-violet-400"
+                    animate={{ opacity: [0.2, 1, 0.2], y: [0, -3, 0] }}
+                    transition={{ duration: 0.8, delay: d, repeat: Infinity }} />
+                ))}
+                <span className="text-xs text-violet-600">Generating question…</span>
+              </div>
+            )}
+
+            {practice.phase === 'answering' && (
+              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                <div className="relative px-4 py-3.5 rounded-lg border border-violet-200 bg-violet-50">
+                  <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-400 rounded-l-lg" />
+                  <p className="text-[10px] font-semibold text-violet-600 uppercase tracking-widest mb-2">Question</p>
+                  <p className="text-sm text-gray-800 leading-relaxed">{practice.question}</p>
+                </div>
+                <textarea
+                  ref={answerRef}
+                  value={practice.answer}
+                  onChange={e => setPractice(p => ({ ...p, answer: e.target.value }))}
+                  onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmitAnswer(); }}
+                  placeholder="Type your answer… (Cmd+Enter to submit)"
+                  rows={5}
+                  className="w-full bg-white border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 leading-relaxed focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-200 resize-none transition-colors"
+                />
+                <button
+                  onClick={handleSubmitAnswer}
+                  disabled={!practice.answer.trim()}
+                  className={clsx(
+                    'px-4 py-2 rounded border text-xs font-medium transition-all',
+                    !practice.answer.trim()
+                      ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-white'
+                      : 'border-violet-300 text-violet-700 bg-violet-50 hover:bg-violet-100 active:scale-95'
+                  )}
+                >
+                  Submit answer
+                </button>
+              </motion.div>
+            )}
+
+            {practice.phase === 'evaluating' && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+                <div className="relative px-4 py-3.5 rounded-lg border border-violet-200 bg-violet-50">
+                  <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-400 rounded-l-lg" />
+                  <p className="text-[10px] font-semibold text-violet-600 uppercase tracking-widest mb-2">Question</p>
+                  <p className="text-sm text-gray-800 leading-relaxed">{practice.question}</p>
+                </div>
+                <div className="px-4 py-3 rounded-lg border border-gray-200 bg-gray-50 opacity-60">
+                  <p className="text-xs text-gray-500 mb-1">Your answer</p>
+                  <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">{practice.answer}</p>
+                </div>
+                <div className="flex items-center gap-2 py-1">
+                  {[0, 0.15, 0.3].map(d => (
+                    <motion.span key={d} className="w-1.5 h-1.5 rounded-full bg-violet-400"
+                      animate={{ opacity: [0.2, 1, 0.2], y: [0, -3, 0] }}
+                      transition={{ duration: 0.8, delay: d, repeat: Infinity }} />
+                  ))}
+                  <span className="text-xs text-violet-600">Evaluating…</span>
+                </div>
+              </motion.div>
+            )}
+
+            {practice.phase === 'done' && practice.feedback && (
+              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+                <div className="relative px-4 py-3 rounded-lg border border-violet-200 bg-violet-50">
+                  <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-violet-400 rounded-l-lg" />
+                  <p className="text-[10px] font-semibold text-violet-600 mb-1">Question</p>
+                  <p className="text-xs text-gray-700 leading-relaxed">{practice.question}</p>
+                </div>
+                <div className="px-4 py-3 rounded-lg border border-gray-200 bg-gray-50">
+                  <p className="text-xs text-gray-400 mb-1">Your answer</p>
+                  <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">{practice.answer}</p>
+                </div>
+                {practice.warn && <p className="text-xs text-amber-600 px-1">{practice.warn}</p>}
+                <div className="px-4 py-3 rounded-lg border border-green-200 bg-green-50">
+                  <p className="text-xs font-semibold text-green-700 uppercase tracking-wider mb-2">Got right</p>
+                  <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-line">{practice.feedback.gotRight}</p>
+                </div>
+                <div className="px-4 py-3 rounded-lg border border-red-200 bg-red-50">
+                  <p className="text-xs font-semibold text-red-700 uppercase tracking-wider mb-2">Missed</p>
+                  <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-line">{practice.feedback.missed}</p>
+                </div>
+                <div className="px-4 py-3 rounded-lg border border-blue-200 bg-blue-50">
+                  <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">Follow-up</p>
+                  <p className="text-xs text-gray-700 leading-relaxed">{practice.feedback.followUp}</p>
+                </div>
+                <div className={clsx('inline-flex items-center gap-1.5 px-3 py-1.5 rounded border text-xs font-medium', signalColor(practice.feedback.signal))}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-current shrink-0" />
+                  {practice.feedback.signal}
+                </div>
+                <button
+                  onClick={handleStartPractice}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-violet-200 text-violet-600 text-xs font-medium hover:bg-violet-50 hover:border-violet-300 active:scale-95 transition-all"
+                >
+                  New question
+                </button>
+              </motion.div>
+            )}
+          </div>
+        )}
+
+        {/* Ask AI tab */}
+        {activeTab === 'ask' && (
+          <div className="space-y-3">
+            {miniMsgs.length > 0 && (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <AnimatePresence initial={false}>
+                  {miniMsgs.map(msg => (
+                    <motion.div key={msg.id}
+                      initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {msg.role === 'user' && (
+                        <div className="flex justify-end">
+                          <div className="max-w-[80%] bg-blue-50 border border-blue-200 rounded-xl rounded-tr-sm px-3 py-2">
+                            <p className="text-xs text-gray-800 leading-relaxed">{msg.text}</p>
+                          </div>
+                        </div>
+                      )}
+                      {msg.role === 'thinking' && (
+                        <div className="flex gap-2 items-center">
+                          <div className="w-5 h-5 rounded-full bg-white border border-blue-200 flex items-center justify-center shrink-0">
+                            <span className="text-blue-600 font-bold" style={{ fontSize: 8 }}>AI</span>
+                          </div>
+                          <div className="inline-flex gap-1 px-3 py-2 bg-white border border-gray-200 rounded-xl rounded-tl-sm">
+                            {[0, 0.2, 0.4].map(d => (
+                              <motion.span key={d} className="w-1 h-1 rounded-full bg-gray-400"
+                                animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
+                                transition={{ duration: 0.9, delay: d, repeat: Infinity }} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {msg.role === 'ai' && (
+                        <div className="flex gap-2 items-start">
+                          <div className="w-5 h-5 rounded-full bg-white border border-blue-200 flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-blue-600 font-bold" style={{ fontSize: 8 }}>AI</span>
+                          </div>
+                          <div className="bg-white border border-gray-200 rounded-xl rounded-tl-sm px-3 py-2">
+                            <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-line">{msg.text}</p>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                <div ref={chatEndRef} />
+              </div>
+            )}
+            <div className="flex gap-2 items-end">
+              <input
+                type="text"
+                value={miniInput}
+                onChange={e => setMiniInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleAskSend(); }}
+                placeholder={`Ask about "${section.heading}"…`}
+                disabled={miniWait}
+                className="flex-1 bg-white border border-gray-200 rounded px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-200 transition-colors"
+              />
+              <button
+                onClick={handleAskSend}
+                disabled={!miniInput.trim() || miniWait}
+                className={clsx(
+                  'px-3 py-2 rounded border text-xs font-medium transition-all',
+                  !miniInput.trim() || miniWait
+                    ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-white'
+                    : 'border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100 active:scale-95'
+                )}
+              >
+                {miniWait ? '…' : 'Ask'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -526,21 +516,21 @@ function AskAIChat({ studyContent }: { studyContent: StudySection[] }) {
   }
 
   return (
-    <div className="border border-indigo-500/20 rounded-xl overflow-hidden bg-indigo-500/3">
+    <div className="border border-blue-200 rounded-lg overflow-hidden bg-blue-50/30">
       <button
         onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-indigo-500/5 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-blue-50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <div className="w-6 h-6 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
-            <span className="text-xs text-indigo-400 font-bold font-mono">AI</span>
+          <div className="w-6 h-6 rounded-full bg-white border border-blue-200 flex items-center justify-center">
+            <span className="text-xs text-blue-600 font-bold">AI</span>
           </div>
           <div className="text-left">
-            <p className="text-sm font-semibold text-slate-200">Ask AI</p>
-            <p className="text-xs text-slate-500 mt-0.5">Clarify anything from this module</p>
+            <p className="text-sm font-medium text-gray-900">Ask AI about this module</p>
+            <p className="text-xs text-gray-500 mt-0.5">Covers all sections — trade-offs, edge cases, production context</p>
           </div>
         </div>
-        <span className="text-slate-600 text-xs">{open ? '▲' : '▼'}</span>
+        <span className="text-gray-400 text-xs">{open ? '▲' : '▼'}</span>
       </button>
 
       <AnimatePresence>
@@ -550,11 +540,11 @@ function AskAIChat({ studyContent }: { studyContent: StudySection[] }) {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.22 }}
-            className="overflow-hidden border-t border-indigo-500/15"
+            className="overflow-hidden border-t border-blue-100"
           >
-            <div className="px-4 py-4 space-y-3 max-h-80 overflow-y-auto">
+            <div className="px-4 py-4 space-y-3 max-h-80 overflow-y-auto bg-white">
               {messages.length === 0 && (
-                <p className="text-xs text-slate-600 text-center font-mono py-4">
+                <p className="text-xs text-gray-400 text-center py-4">
                   Ask anything about this module — concepts, trade-offs, examples…
                 </p>
               )}
@@ -563,19 +553,19 @@ function AskAIChat({ studyContent }: { studyContent: StudySection[] }) {
                   <motion.div key={msg.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }}>
                     {msg.role === 'user' && (
                       <div className="flex justify-end">
-                        <div className="max-w-[80%] bg-indigo-600/15 border border-indigo-500/25 rounded-2xl rounded-tr-sm px-3.5 py-2.5">
-                          <p className="text-sm text-slate-200 leading-relaxed">{msg.text}</p>
+                        <div className="max-w-[80%] bg-blue-50 border border-blue-200 rounded-2xl rounded-tr-sm px-3.5 py-2.5">
+                          <p className="text-sm text-gray-800 leading-relaxed">{msg.text}</p>
                         </div>
                       </div>
                     )}
                     {msg.role === 'thinking' && (
                       <div className="flex items-start gap-2">
-                        <div className="w-6 h-6 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="text-xs text-indigo-400 font-bold font-mono">AI</span>
+                        <div className="w-6 h-6 rounded-full bg-white border border-blue-200 flex items-center justify-center shrink-0 mt-0.5">
+                          <span className="text-xs text-blue-600 font-bold">AI</span>
                         </div>
-                        <div className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-800/60 border border-slate-700 rounded-2xl rounded-tl-sm">
+                        <div className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white border border-gray-200 rounded-2xl rounded-tl-sm">
                           {[0, 0.2, 0.4].map(d => (
-                            <motion.span key={d} className="w-1.5 h-1.5 rounded-full bg-slate-500"
+                            <motion.span key={d} className="w-1.5 h-1.5 rounded-full bg-gray-300"
                               animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
                               transition={{ duration: 0.9, delay: d, repeat: Infinity }} />
                           ))}
@@ -584,15 +574,15 @@ function AskAIChat({ studyContent }: { studyContent: StudySection[] }) {
                     )}
                     {msg.role === 'ai' && (
                       <div className="flex items-start gap-2">
-                        <div className="w-6 h-6 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="text-xs text-indigo-400 font-bold font-mono">AI</span>
+                        <div className="w-6 h-6 rounded-full bg-white border border-blue-200 flex items-center justify-center shrink-0 mt-0.5">
+                          <span className="text-xs text-blue-600 font-bold">AI</span>
                         </div>
                         <div className="flex-1 space-y-1">
-                          {msg.warn && <p className="text-xs text-amber-400 font-mono">{msg.warn}</p>}
-                          <div className="bg-slate-800/60 border border-slate-700 rounded-2xl rounded-tl-sm px-3.5 py-2.5">
-                            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{msg.text}</p>
+                          {msg.warn && <p className="text-xs text-amber-600">{msg.warn}</p>}
+                          <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-3.5 py-2.5">
+                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{msg.text}</p>
                           </div>
-                          <p className="text-xs font-mono text-slate-700 pl-1">
+                          <p className="text-xs text-gray-400 pl-1">
                             {msg.source === 'user-key' ? 'Your API key' : msg.source === 'server-key' ? 'Server AI' : 'Auto-answer'}
                           </p>
                         </div>
@@ -604,24 +594,24 @@ function AskAIChat({ studyContent }: { studyContent: StudySection[] }) {
               <div ref={bottomRef} />
             </div>
 
-            <div className="px-4 pb-4 flex gap-2 items-end border-t border-indigo-500/10 pt-3">
+            <div className="px-4 pb-4 flex gap-2 items-end border-t border-gray-100 pt-3 bg-white">
               <textarea
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSend(); }}
-                placeholder="Ask a question… (⌘ Enter to send)"
+                placeholder="Ask a question… (Cmd+Enter to send)"
                 rows={2}
                 disabled={waiting}
-                className="flex-1 bg-slate-900/60 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 placeholder-slate-600 font-mono leading-relaxed focus:outline-none focus:border-indigo-500/50 resize-none transition-colors"
+                className="flex-1 bg-white border border-gray-200 rounded-lg px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 leading-relaxed focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-200 resize-none transition-colors"
               />
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || waiting}
                 className={clsx(
-                  'px-4 py-2.5 rounded-xl border text-xs font-mono font-semibold transition-all self-end',
+                  'px-4 py-2.5 rounded border text-xs font-medium transition-all self-end',
                   !input.trim() || waiting
-                    ? 'border-slate-800 text-slate-700 cursor-not-allowed'
-                    : 'border-indigo-600/50 text-indigo-400 hover:border-indigo-400 hover:bg-indigo-500/5 active:scale-95'
+                    ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-white'
+                    : 'border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100 active:scale-95'
                 )}
               >
                 {waiting ? '…' : 'Send'}
@@ -637,36 +627,157 @@ function AskAIChat({ studyContent }: { studyContent: StudySection[] }) {
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export interface StudyGuideViewerProps {
-  studyContent:     StudySection[];
-  moduleTitle:      string;
-  moduleCategory:   string;
-  accentColor?:     string; // tailwind color name e.g. 'blue', 'amber'
-  sectionCount?:    number;
+  studyContent:   StudySection[];
+  moduleTitle:    string;
+  moduleCategory: string;
+  moduleDesc?:    string;
+  accentColor?:   string;
+  sectionCount?:  number;
 }
 
 export function StudyGuideViewer({
-  studyContent, moduleTitle, moduleCategory, accentColor = 'indigo',
+  studyContent, moduleTitle, moduleCategory, moduleDesc, accentColor = 'blue',
 }: StudyGuideViewerProps) {
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const [visited,     setVisited]     = useState<Set<number>>(() => { const s = new Set<number>(); s.add(0); return s; });
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const accent  = ACCENT[accentColor] ?? ACCENT.blue;
+  const section = studyContent[selectedIdx];
+
+  function goTo(i: number) {
+    setSelectedIdx(i);
+    setVisited(v => { const next = new Set(v); next.add(i); return next; });
+    contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Module label */}
-      <div className="flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full bg-${accentColor}-500`} />
-        <span className="text-xs font-mono font-semibold text-slate-400 uppercase tracking-widest">
-          {moduleCategory} — {moduleTitle}
-        </span>
-        <span className="ml-auto text-xs text-slate-600">{studyContent.length} sections</span>
-      </div>
+    <div className="flex border-t border-gray-200" style={{ height: 'calc(100vh - 48px)' }}>
 
-      {/* Section cards */}
-      <div className="space-y-3">
-        {studyContent.map(section => (
-          <SectionCard key={section.heading} section={section} />
-        ))}
-      </div>
+      {/* ── Sidebar ── */}
+      <aside className="w-56 shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
 
-      {/* Module-level Ask AI */}
-      <AskAIChat studyContent={studyContent} />
+        {/* Header */}
+        <div className="px-4 pt-5 pb-4 border-b border-gray-100 shrink-0">
+          <Link
+            href="/study-guide"
+            className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors mb-3"
+          >
+            <ChevronLeft className="w-3 h-3" />
+            Study Guide
+          </Link>
+          <h2 className="text-sm font-semibold text-gray-900 leading-snug">{moduleTitle}</h2>
+          <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-wider">{moduleCategory}</p>
+          {moduleDesc && (
+            <p className="text-[11px] text-gray-500 mt-2 leading-relaxed line-clamp-3">{moduleDesc}</p>
+          )}
+        </div>
+
+        {/* Section list */}
+        <nav className="flex-1 overflow-y-auto py-1">
+          {studyContent.map((sec, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              className={clsx(
+                'relative w-full text-left flex items-start gap-2.5 px-4 py-2.5 transition-colors',
+                selectedIdx === i
+                  ? accent.activeBg
+                  : 'hover:bg-gray-50'
+              )}
+            >
+              {selectedIdx === i && (
+                <div className={`absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r ${accent.bar}`} />
+              )}
+              <span className={clsx(
+                'w-4 h-4 rounded-full shrink-0 flex items-center justify-center font-medium mt-0.5',
+                'text-[9px]',
+                selectedIdx === i
+                  ? accent.numOn
+                  : visited.has(i)
+                  ? 'bg-gray-200 text-gray-500'
+                  : accent.numOff
+              )}>
+                {i + 1}
+              </span>
+              <span className={clsx(
+                'text-[11px] leading-relaxed line-clamp-2 flex-1',
+                selectedIdx === i ? 'text-gray-900 font-medium' : visited.has(i) ? 'text-gray-600' : 'text-gray-400'
+              )}>
+                {sec.heading}
+              </span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Footer */}
+        <div className="px-4 py-3 border-t border-gray-100 shrink-0">
+          <p className="text-[10px] text-gray-400">
+            {visited.size} / {studyContent.length} sections visited
+          </p>
+        </div>
+      </aside>
+
+      {/* ── Main content ── */}
+      <main ref={contentRef} className="flex-1 min-w-0 overflow-y-auto bg-gray-50/40">
+        <div className="max-w-2xl mx-auto px-10 py-8">
+
+          {/* Section header */}
+          <div className="mb-6">
+            <p className="text-[10px] text-gray-400 mb-1.5 uppercase tracking-wider font-medium">
+              {selectedIdx + 1} of {studyContent.length}
+            </p>
+            <h1 className="text-lg font-semibold text-gray-900 leading-snug">
+              {section.heading}
+            </h1>
+          </div>
+
+          {/* Section content + tools — key resets state on navigation */}
+          <SectionContent key={section.heading} section={section} />
+
+          {/* Prev / Next navigation */}
+          <div className="flex items-center justify-between mt-10 pt-6 border-t border-gray-200">
+            <button
+              onClick={() => goTo(Math.max(0, selectedIdx - 1))}
+              disabled={selectedIdx === 0}
+              className={clsx(
+                'flex items-center gap-1.5 px-3 py-2 rounded border text-xs font-medium transition-all',
+                selectedIdx === 0
+                  ? 'border-gray-100 text-gray-300 cursor-not-allowed'
+                  : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 active:scale-95'
+              )}
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              Previous
+            </button>
+
+            <span className="text-xs text-gray-400 tabular-nums">
+              {selectedIdx + 1} / {studyContent.length}
+            </span>
+
+            <button
+              onClick={() => goTo(Math.min(studyContent.length - 1, selectedIdx + 1))}
+              disabled={selectedIdx === studyContent.length - 1}
+              className={clsx(
+                'flex items-center gap-1.5 px-3 py-2 rounded border text-xs font-medium transition-all',
+                selectedIdx === studyContent.length - 1
+                  ? 'border-gray-100 text-gray-300 cursor-not-allowed'
+                  : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 active:scale-95'
+              )}
+            >
+              Next
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Module-level Ask AI */}
+          <div className="mt-8">
+            <AskAIChat studyContent={studyContent} />
+          </div>
+
+        </div>
+      </main>
+
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { api } from '@/lib/api';
 
 export const STAGES = [0, 1, 5, 25, 50, 100] as const;
 export type FaultType  = 'none' | 'latency' | 'errors' | 'drift';
@@ -8,9 +9,9 @@ export type GateStatus = 'pass' | 'fail' | 'pending';
 export type SimStatus  = 'idle' | 'observing' | 'complete' | 'rolledBack';
 
 export interface Metrics {
-  p99:       number; // ms
-  errorRate: number; // %
-  psi:       number; // 0–1
+  p99:       number;
+  errorRate: number;
+  psi:       number;
 }
 
 export interface Gates {
@@ -31,8 +32,8 @@ export interface SimState {
   champion:     Metrics;
   canary:       Metrics;
   gates:        Gates;
-  elapsed:      number;   // seconds at current stage
-  minWindow:    number;   // seconds required before promote
+  elapsed:      number;
+  minWindow:    number;
   fault:        FaultType;
   status:       SimStatus;
   autoRollback: boolean;
@@ -40,31 +41,19 @@ export interface SimState {
 }
 
 const MIN_WINDOW = 20;
-const BASE_CHAMPION: Metrics = { p99: 80, errorRate: 0.2, psi: 0 };
 
-function rand(base: number, pct: number) {
-  return +(base + (Math.random() - 0.5) * 2 * base * pct).toFixed(2);
+interface ApiResponse {
+  champion: { p99: number; error_rate: number; psi: number };
+  canary:   { p99: number; error_rate: number; psi: number };
+  gates:    { p99: string; error_rate: string; psi: string };
 }
 
-function canaryMetrics(fault: FaultType): Metrics {
-  switch (fault) {
-    case 'latency': return { p99: rand(128, 0.12), errorRate: rand(0.28, 0.3), psi: rand(0.03, 0.4) };
-    case 'errors':  return { p99: rand(84,  0.08), errorRate: rand(3.8,  0.2), psi: rand(0.04, 0.3) };
-    case 'drift':   return { p99: rand(83,  0.08), errorRate: rand(0.28, 0.3), psi: rand(0.19, 0.15) };
-    default:        return { p99: rand(82,  0.07), errorRate: rand(0.25, 0.3), psi: rand(0.02, 0.5) };
-  }
+function toMetrics(r: { p99: number; error_rate: number; psi: number }): Metrics {
+  return { p99: r.p99, errorRate: r.error_rate, psi: r.psi };
 }
 
-function champMetrics(): Metrics {
-  return { p99: rand(80, 0.03), errorRate: rand(0.2, 0.1), psi: 0 };
-}
-
-export function evalGates(champion: Metrics, canary: Metrics): Gates {
-  return {
-    p99:       canary.p99 / champion.p99 <= 1.05 ? 'pass' : 'fail',
-    errorRate: canary.errorRate < 1.0            ? 'pass' : 'fail',
-    psi:       canary.psi < 0.1                  ? 'pass' : 'fail',
-  };
+function toGates(r: { p99: string; error_rate: string; psi: string }): Gates {
+  return { p99: r.p99 as GateStatus, errorRate: r.error_rate as GateStatus, psi: r.psi as GateStatus };
 }
 
 export function allPass(gates: Gates): boolean {
@@ -77,7 +66,7 @@ function mkLog(msg: string, level: LogEntry['level']): LogEntry {
 
 const INITIAL: SimState = {
   stageIdx:     0,
-  champion:     BASE_CHAMPION,
+  champion:     { p99: 80, errorRate: 0.2, psi: 0 },
   canary:       { p99: 0, errorRate: 0, psi: 0 },
   gates:        { p99: 'pending', errorRate: 'pending', psi: 'pending' },
   elapsed:      0,
@@ -90,51 +79,58 @@ const INITIAL: SimState = {
 
 export function useSimulation() {
   const [state, setState] = useState<SimState>(INITIAL);
+  const stateRef = useRef<SimState>(INITIAL);
 
-  // Tick every second while observing
+  useEffect(() => { stateRef.current = state; }, [state]);
+
   const tick = useCallback(() => {
-    setState(prev => {
-      if (prev.status !== 'observing') return prev;
+    const prev = stateRef.current;
+    if (prev.status !== 'observing') return;
 
-      const champion = champMetrics();
-      const canary   = canaryMetrics(prev.fault);
-      const gates    = evalGates(champion, canary);
-      const elapsed  = prev.elapsed + 1;
-      const newLogs  = prev.log.slice(-60); // keep last 60 entries
+    api.post<ApiResponse>('/api/deployment/canary-release/simulate', {
+      stage_pct: STAGES[prev.stageIdx],
+      fault: prev.fault,
+    }).then(result => {
+      const champion = toMetrics(result.champion);
+      const canary   = toMetrics(result.canary);
+      const gates    = toGates(result.gates);
 
-      // Auto-rollback on gate failure
-      if (!allPass(gates) && prev.autoRollback) {
-        const failing = (Object.keys(gates) as (keyof Gates)[])
-          .filter(k => gates[k] === 'fail');
-        const prevIdx = Math.max(0, prev.stageIdx - 1);
-        newLogs.push(mkLog(
-          `AUTO-ROLLBACK — ${failing.join(', ')} gate failed. Rolling back to ${STAGES[prevIdx]}%.`,
-          'error'
-        ));
-        return {
-          ...prev, champion, canary, gates,
-          stageIdx: prevIdx,
-          elapsed: 0,
-          status: prevIdx === 0 ? 'idle' : 'observing',
-          fault: 'none', log: newLogs,
-        };
-      }
+      setState(s => {
+        if (s.status !== 'observing') return s;
+        const elapsed = s.elapsed + 1;
+        const newLogs = s.log.slice(-60);
 
-      // Periodic gate check log every 5s
-      if (elapsed % 5 === 0) {
-        if (allPass(gates)) {
-          newLogs.push(mkLog(
-            `Gates passing — ${elapsed}s / ${prev.minWindow}s window at ${STAGES[prev.stageIdx]}%`,
-            'success'
-          ));
-        } else {
+        if (!allPass(gates) && s.autoRollback) {
           const failing = (Object.keys(gates) as (keyof Gates)[]).filter(k => gates[k] === 'fail');
-          newLogs.push(mkLog(`Gate FAIL: ${failing.join(', ')} at ${elapsed}s`, 'warn'));
+          const prevIdx = Math.max(0, s.stageIdx - 1);
+          newLogs.push(mkLog(
+            `AUTO-ROLLBACK — ${failing.join(', ')} gate failed. Rolling back to ${STAGES[prevIdx]}%.`,
+            'error'
+          ));
+          return {
+            ...s, champion, canary, gates,
+            stageIdx: prevIdx,
+            elapsed: 0,
+            status: prevIdx === 0 ? 'idle' : 'observing',
+            fault: 'none', log: newLogs,
+          };
         }
-      }
 
-      return { ...prev, champion, canary, gates, elapsed, log: newLogs };
-    });
+        if (elapsed % 5 === 0) {
+          if (allPass(gates)) {
+            newLogs.push(mkLog(
+              `Gates passing — ${elapsed}s / ${s.minWindow}s window at ${STAGES[s.stageIdx]}%`,
+              'success'
+            ));
+          } else {
+            const failing = (Object.keys(gates) as (keyof Gates)[]).filter(k => gates[k] === 'fail');
+            newLogs.push(mkLog(`Gate FAIL: ${failing.join(', ')} at ${elapsed}s`, 'warn'));
+          }
+        }
+
+        return { ...s, champion, canary, gates, elapsed, log: newLogs };
+      });
+    }).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -144,14 +140,19 @@ export function useSimulation() {
   }, [state.status, tick]);
 
   function startCanary() {
-    const champion = champMetrics();
-    const canary   = canaryMetrics('none');
-    const gates    = evalGates(champion, canary);
-    setState(prev => ({
-      ...prev, stageIdx: 1, champion, canary, gates,
-      elapsed: 0, fault: 'none', status: 'observing',
-      log: [...prev.log, mkLog('Canary started at 1% traffic. Observation window running…', 'info')],
-    }));
+    api.post<ApiResponse>('/api/deployment/canary-release/simulate', {
+      stage_pct: STAGES[1],
+      fault: 'none',
+    }).then(result => {
+      const champion = toMetrics(result.champion);
+      const canary   = toMetrics(result.canary);
+      const gates    = toGates(result.gates);
+      setState(prev => ({
+        ...prev, stageIdx: 1, champion, canary, gates,
+        elapsed: 0, fault: 'none', status: 'observing',
+        log: [...prev.log, mkLog('Canary started at 1% traffic. Observation window running…', 'info')],
+      }));
+    }).catch(console.error);
   }
 
   function promote() {
@@ -186,10 +187,7 @@ export function useSimulation() {
         elapsed: 0,
         fault: 'none',
         status: prevIdx === 0 ? 'idle' : 'observing',
-        log: [...prev.log, mkLog(
-          `Manual rollback — traffic returned to ${STAGES[prevIdx]}%.`,
-          'warn'
-        )],
+        log: [...prev.log, mkLog(`Manual rollback — traffic returned to ${STAGES[prevIdx]}%.`, 'warn')],
       };
     });
   }
@@ -202,16 +200,14 @@ export function useSimulation() {
       drift:   'Feature Drift — PSI rising above 0.1',
     };
     setState(prev => ({
-      ...prev,
-      fault,
+      ...prev, fault,
       log: [...prev.log, mkLog(`FAULT: ${labels[fault]}`, fault === 'none' ? 'info' : 'error')],
     }));
   }
 
   function toggleAutoRollback() {
     setState(prev => ({
-      ...prev,
-      autoRollback: !prev.autoRollback,
+      ...prev, autoRollback: !prev.autoRollback,
       log: [...prev.log, mkLog(
         !prev.autoRollback
           ? 'Auto-rollback ON — gates will trigger rollback automatically on failure.'

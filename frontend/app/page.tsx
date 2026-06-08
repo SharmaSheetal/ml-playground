@@ -1,283 +1,174 @@
 import Link from 'next/link';
-import {
-  FlaskConical, BookOpen, Mic, Rocket, BarChart3,
-  Cpu, Layers, ArrowRight, Circle, Zap,
-} from 'lucide-react';
+import { Network, GitBranch, Eye, Zap, BarChart3, Cpu, Layers, FlaskConical, BookOpen, Mic, ArrowRight } from 'lucide-react';
 
-function Stat({ value, label, color }: { value: string; label: string; color: string }) {
-  return (
-    <div className={`flex items-center gap-2.5 px-4 py-2 rounded-full border bg-slate-900/60 backdrop-blur ${color}`}>
-      <span className="text-sm font-bold text-slate-100">{value}</span>
-      <span className="text-xs text-slate-400">{label}</span>
+const MODULE_COLORS: Record<string, string> = {
+  'traffic-split':     'bg-blue-50   text-blue-700   border-blue-200',
+  'canary-release':    'bg-green-50  text-green-700  border-green-200',
+  'shadow-mode':       'bg-violet-50 text-violet-700 border-violet-200',
+  'latency-optimizer': 'bg-orange-50 text-orange-700 border-orange-200',
+};
+
+const ICON_COLORS: Record<string, string> = {
+  'traffic-split':     'text-blue-600',
+  'canary-release':    'text-green-600',
+  'shadow-mode':       'text-violet-600',
+  'latency-optimizer': 'text-orange-600',
+};
+
+interface Mod {
+  slug: string; title: string; desc: string;
+  Icon: React.ElementType; sections: number; questions: number;
+  level: 'Beginner' | 'Intermediate' | 'Advanced'; live: boolean;
+}
+
+const LEVEL_STYLE = {
+  Beginner:     'bg-green-50  text-green-700  border-green-200',
+  Intermediate: 'bg-amber-50  text-amber-700  border-amber-200',
+  Advanced:     'bg-red-50    text-red-700    border-red-200',
+};
+
+function ModuleRow({ mod, href }: { mod: Mod; href: string }) {
+  const iconCls = ICON_COLORS[mod.slug] ?? 'text-gray-500';
+  const { Icon } = mod;
+
+  const row = (
+    <div className={[
+      'flex items-center gap-4 px-4 py-3 bg-white border-b border-gray-100 transition-colors',
+      mod.live ? 'hover:bg-gray-50 cursor-pointer' : 'opacity-50 cursor-not-allowed',
+    ].join(' ')}>
+      <div className="w-7 h-7 rounded flex items-center justify-center bg-gray-50 border border-gray-200 shrink-0">
+        <Icon className={`w-3.5 h-3.5 ${iconCls}`} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-medium text-gray-900">{mod.title}</span>
+        <p className="text-xs text-gray-500 mt-0.5 truncate">{mod.desc}</p>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        <span className={`hidden sm:inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium border ${LEVEL_STYLE[mod.level]}`}>
+          {mod.level}
+        </span>
+        <span className="text-xs text-gray-400 tabular-nums hidden md:block">{mod.sections}L · {mod.questions}Q</span>
+        {mod.live ? (
+          <span className="flex items-center gap-1 text-[10px] font-medium text-green-700">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />Live
+          </span>
+        ) : (
+          <span className="text-[10px] font-medium text-gray-400">Soon</span>
+        )}
+        {mod.live && <ArrowRight className="w-3.5 h-3.5 text-gray-300" />}
+      </div>
     </div>
   );
+
+  if (!mod.live) return row;
+  return <Link href={href}>{row}</Link>;
 }
 
-function FeatureCard({
-  href, Icon, iconColor, iconBg, title, subtitle, badge, badgeColor, features, accentBorder,
-}: {
-  href: string;
-  Icon: React.ElementType;
-  iconColor: string;
-  iconBg: string;
-  title: string;
-  subtitle: string;
-  badge: string;
-  badgeColor: string;
-  features: string[];
-  accentBorder: string;
-}) {
+const DEPLOYMENT: Mod[] = [
+  { slug: 'traffic-split',     title: 'Traffic Split',     desc: 'Canary, blue-green, P99, champion/challenger, auto-rollback',   Icon: Network,   sections: 27, questions: 55, level: 'Intermediate', live: true  },
+  { slug: 'canary-release',    title: 'Canary Release',    desc: 'Staged promotion, PSI gates, observation windows, Argo Rollouts', Icon: GitBranch, sections: 10, questions: 26, level: 'Intermediate', live: true  },
+  { slug: 'shadow-mode',       title: 'Shadow Mode',       desc: 'Request mirroring, divergence metrics, Istio/Envoy',             Icon: Eye,       sections: 10, questions: 19, level: 'Advanced',     live: true  },
+  { slug: 'latency-optimizer', title: 'Latency Optimizer', desc: 'Quantization, batching, TensorRT, caching, P50/P99 SLA design', Icon: Zap,       sections: 10, questions: 20, level: 'Advanced',     live: true  },
+];
+
+function SectionTable({ mods, basePath }: { mods: Mod[]; basePath: string }) {
   return (
-    <Link href={href} className="group block">
-      <div className={`relative h-full bg-slate-900 border border-slate-800 rounded-2xl p-6 transition-all duration-300 hover:border-opacity-60 hover:-translate-y-0.5 hover:shadow-xl ${accentBorder} overflow-hidden`}>
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
-          style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.06) 0%, transparent 70%)' }} />
-
-        <div className="relative space-y-4">
-          <div className="flex items-start justify-between">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg}`}>
-              <Icon className={`w-5 h-5 ${iconColor}`} />
-            </div>
-            <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${badgeColor}`}>{badge}</span>
-          </div>
-
-          <div>
-            <h2 className="text-lg font-bold text-slate-100 group-hover:text-white transition-colors">{title}</h2>
-            <p className="text-sm text-slate-400 mt-1 leading-relaxed">{subtitle}</p>
-          </div>
-
-          <ul className="space-y-1.5">
-            {features.map(f => (
-              <li key={f} className="flex items-center gap-2 text-xs text-slate-500">
-                <Circle className="w-1 h-1 fill-slate-600 stroke-none shrink-0" />
-                {f}
-              </li>
-            ))}
-          </ul>
-
-          <div className="flex items-center gap-1 text-xs font-semibold text-slate-400 group-hover:text-slate-200 transition-colors pt-1">
-            <span>Open</span>
-            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function ModuleChip({ label, status, color }: { label: string; status: 'live' | 'soon'; color: string }) {
-  return (
-    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-mono ${
-      status === 'live'
-        ? color
-        : 'bg-slate-900/40 border-slate-800/60 text-slate-600 cursor-not-allowed opacity-60'
-    }`}>
-      <Zap className={`w-2.5 h-2.5 shrink-0 ${status === 'live' ? 'text-emerald-400' : 'text-slate-600'}`} />
-      {label}
-      {status === 'live' && <span className="ml-auto text-emerald-500 text-[10px] font-bold">LIVE</span>}
+    <div className="rounded-md border border-gray-200 overflow-hidden">
+      {mods.map(mod => (
+        <ModuleRow key={mod.slug} mod={mod} href={`${basePath}/${mod.slug}`} />
+      ))}
     </div>
   );
 }
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="max-w-5xl mx-auto px-6 py-8">
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full opacity-[0.04]"
-            style={{ background: 'radial-gradient(ellipse, #6366f1 0%, transparent 70%)' }} />
-          <div className="absolute top-20 left-1/4 w-[400px] h-[300px] rounded-full opacity-[0.025]"
-            style={{ background: 'radial-gradient(ellipse, #f59e0b 0%, transparent 70%)' }} />
+      {/* Page header */}
+      <div className="mb-8">
+        <h1 className="text-xl font-semibold text-gray-900 mb-1">MLOps Playground</h1>
+        <p className="text-sm text-gray-500">
+          Hands-on simulators, structured study, and AI-evaluated interview prep for ML engineers.
+        </p>
+      </div>
+
+      {/* Learning mode cards */}
+      <div className="grid grid-cols-3 gap-3 mb-8">
+        {[
+          { href: '/labs',           Icon: FlaskConical, label: 'Labs',           badge: '4 live',   desc: 'Run simulators, inject faults, observe system behavior in real time.',          badgeCls: 'bg-green-50 text-green-700 border-green-200' },
+          { href: '/study-guide',    Icon: BookOpen,     label: 'Study Guide',    badge: '57 lessons', desc: 'Concept breakdowns with AI quiz and practice mode per section.',              badgeCls: 'bg-blue-50 text-blue-700 border-blue-200'   },
+          { href: '/mock-interview', Icon: Mic,          label: 'Mock Interview', badge: '120+ Q&As', desc: 'Answer real questions. AI evaluates GOT RIGHT / MISSED / FOLLOW-UP.',         badgeCls: 'bg-violet-50 text-violet-700 border-violet-200' },
+        ].map(({ href, Icon, label, badge, desc, badgeCls }) => (
+          <Link key={href} href={href}>
+            <div className="bg-white border border-gray-200 rounded-md p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer h-full">
+              <div className="flex items-start justify-between mb-2">
+                <div className="w-7 h-7 bg-gray-50 border border-gray-200 rounded flex items-center justify-center">
+                  <Icon className="w-3.5 h-3.5 text-gray-600" />
+                </div>
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${badgeCls}`}>{badge}</span>
+              </div>
+              <p className="text-sm font-medium text-gray-900 mb-1">{label}</p>
+              <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Stats strip */}
+      <div className="flex items-center gap-6 px-4 py-3 bg-white border border-gray-200 rounded-md mb-8">
+        {[
+          { value: '4',    label: 'live simulators' },
+          { value: '57',   label: 'study sections'  },
+          { value: '120+', label: 'interview Q&As'  },
+          { value: 'AI',   label: 'eval on every answer' },
+        ].map(s => (
+          <div key={s.label} className="flex items-baseline gap-1.5">
+            <span className="text-sm font-semibold text-gray-900 tabular-nums">{s.value}</span>
+            <span className="text-xs text-gray-400">{s.label}</span>
+          </div>
+        ))}
+        <div className="ml-auto flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          <span className="text-xs text-gray-500">Deployment module live</span>
+        </div>
+      </div>
+
+      {/* Module table */}
+      <div className="space-y-6">
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <Network className="w-3.5 h-3.5 text-blue-600" />
+            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Deployment</h2>
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border bg-green-50 text-green-700 border-green-200">4 live</span>
+          </div>
+          <SectionTable mods={DEPLOYMENT} basePath="/labs/deployment" />
         </div>
 
-        <div className="relative max-w-5xl mx-auto px-6 pt-20 pb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/80 text-xs font-mono text-slate-400 mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            2 live simulators · actively building
-          </div>
-
-          <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-slate-100 leading-[1.05] mb-6">
-            Learn MLOps by{' '}
-            <span className="relative inline-block">
-              <span className="relative z-10 bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent">
-                breaking things
-              </span>
-              <span className="absolute inset-x-0 -bottom-1 h-px bg-gradient-to-r from-indigo-500/0 via-violet-500/50 to-purple-500/0" />
-            </span>
-          </h1>
-
-          <p className="text-lg text-slate-400 max-w-2xl leading-relaxed mb-10">
-            Interactive simulators for deployment, monitoring, and system design. Inject faults, watch
-            gates fire, practice interviews with AI feedback — the stuff that doesn't show up in docs.
-          </p>
-
-          <div className="flex flex-wrap gap-3 mb-8">
-            <Stat value="2"   label="Live simulators"          color="border-emerald-500/20" />
-            <Stat value="37"  label="Study sections"           color="border-indigo-500/20"  />
-            <Stat value="80+" label="Interview Q&As"           color="border-violet-500/20"  />
-            <Stat value="AI"  label="Feedback on every answer" color="border-amber-500/20"   />
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Link href="/labs"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/25">
-              Open Labs
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link href="/study-guide"
-              className="px-6 py-3 rounded-xl border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white font-semibold text-sm transition-all">
-              Study Guide
-            </Link>
-            <Link href="/mock-interview"
-              className="px-6 py-3 rounded-xl border border-slate-700 hover:border-slate-500 text-slate-300 hover:text-white font-semibold text-sm transition-all">
-              Mock Interview
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Three pillars */}
-      <section className="max-w-5xl mx-auto px-6 pb-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <FeatureCard
-            href="/labs"
-            Icon={FlaskConical}
-            iconColor="text-emerald-400"
-            iconBg="bg-emerald-500/10 border border-emerald-500/20"
-            title="Labs"
-            subtitle="Interactive simulators with live metrics, fault injection, and automated gates."
-            badge="Active"
-            badgeColor="bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-            accentBorder="hover:border-emerald-500/30"
-            features={[
-              'Traffic split with live packet flow',
-              'Canary stepper with gate automation',
-              'Fault injection + auto-rollback',
-              '12+ simulators coming',
-            ]}
-          />
-          <FeatureCard
-            href="/study-guide"
-            Icon={BookOpen}
-            iconColor="text-indigo-400"
-            iconBg="bg-indigo-500/10 border border-indigo-500/20"
-            title="Study Guide"
-            subtitle="Deep-dive concept breakdowns for every simulator, with AI quiz and practice mode."
-            badge="Active"
-            badgeColor="bg-indigo-500/10 border-indigo-500/30 text-indigo-400"
-            accentBorder="hover:border-indigo-500/30"
-            features={[
-              '37 sections across 2 modules',
-              'AI-generated quiz per concept',
-              'Practice — answer — AI feedback',
-              'Ask AI anything in context',
-            ]}
-          />
-          <FeatureCard
-            href="/mock-interview"
-            Icon={Mic}
-            iconColor="text-violet-400"
-            iconBg="bg-violet-500/10 border border-violet-500/20"
-            title="Mock Interview"
-            subtitle="80+ real-world MLOps questions with AI evaluation and structured signal feedback."
-            badge="Active"
-            badgeColor="bg-violet-500/10 border-violet-500/30 text-violet-400"
-            accentBorder="hover:border-violet-500/30"
-            features={[
-              '80+ questions across all domains',
-              'AI evaluates GOT RIGHT / MISSED',
-              'Completion modal + keep going mode',
-              'Shuffled every session',
-            ]}
-          />
-        </div>
-      </section>
-
-      {/* Simulator map */}
-      <section className="max-w-5xl mx-auto px-6 pb-16">
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-widest">All Simulators</h2>
-            <Link href="/labs" className="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-mono transition-colors">
-              View all <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5 mb-3">
-                <Rocket className="w-3 h-3 text-blue-400" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Deployment</p>
-              </div>
-              <ModuleChip label="Traffic Split"     status="live" color="bg-blue-500/8 border-blue-500/25 text-blue-300" />
-              <ModuleChip label="Canary Stepper"    status="live" color="bg-blue-500/8 border-blue-500/25 text-blue-300" />
-              <ModuleChip label="Shadow Mode"       status="soon" color="" />
-              <ModuleChip label="Latency Optimizer" status="soon" color="" />
+        {/* Coming soon categories */}
+        {[
+          { label: 'Monitoring',    Icon: BarChart3, color: 'text-emerald-600', titles: ['Drift Detection', 'Four-Layer Metrics', 'Alert Threshold', 'A/B Significance'] },
+          { label: 'MLOps',         Icon: Cpu,       color: 'text-violet-600',  titles: ['Retraining Triggers', 'Feature Store', 'Skew Detector', 'CI/CD Pipeline'] },
+          { label: 'System Design', Icon: Layers,    color: 'text-amber-600',   titles: ['Two-Stage Recommender', 'Fraud Detection', 'Scalability', 'Precision/Recall'] },
+        ].map(({ label, Icon, color, titles }) => (
+          <div key={label}>
+            <div className="flex items-center gap-2 mb-3">
+              <Icon className={`w-3.5 h-3.5 ${color}`} />
+              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</h2>
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border bg-gray-50 text-gray-500 border-gray-200">Coming soon</span>
             </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5 mb-3">
-                <BarChart3 className="w-3 h-3 text-emerald-400" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">Monitoring</p>
-              </div>
-              <ModuleChip label="Drift Injector"    status="soon" color="" />
-              <ModuleChip label="Metrics Dashboard" status="soon" color="" />
-              <ModuleChip label="Alert Threshold"   status="soon" color="" />
-              <ModuleChip label="A/B Significance"  status="soon" color="" />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5 mb-3">
-                <Cpu className="w-3 h-3 text-purple-400" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-purple-400">MLOps</p>
-              </div>
-              <ModuleChip label="Skew Detector"      status="soon" color="" />
-              <ModuleChip label="Retraining Trigger" status="soon" color="" />
-              <ModuleChip label="Feature Store"      status="soon" color="" />
-              <ModuleChip label="CI/CD Pipeline"     status="soon" color="" />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-1.5 mb-3">
-                <Layers className="w-3 h-3 text-amber-400" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400">System Design</p>
-              </div>
-              <ModuleChip label="Recommender"      status="soon" color="" />
-              <ModuleChip label="Fraud Detection"  status="soon" color="" />
-              <ModuleChip label="Scalability"      status="soon" color="" />
-              <ModuleChip label="Precision/Recall" status="soon" color="" />
+            <div className="rounded-md border border-gray-200 overflow-hidden">
+              {titles.map(title => (
+                <div key={title} className="flex items-center gap-3 px-4 py-2.5 bg-white border-b border-gray-100 opacity-50 last:border-0">
+                  <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                  <span className="text-sm text-gray-400">{title}</span>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        ))}
+      </div>
 
-      {/* Bottom CTA */}
-      <section className="max-w-5xl mx-auto px-6 pb-20">
-        <div className="relative overflow-hidden rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/5 via-slate-900 to-violet-500/5 p-8 text-center space-y-4">
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-32 rounded-full opacity-[0.08]"
-              style={{ background: 'radial-gradient(ellipse, #6366f1 0%, transparent 70%)' }} />
-          </div>
-          <h2 className="relative text-2xl font-bold text-slate-100">Ready to get interview-ready?</h2>
-          <p className="relative text-slate-400 max-w-md mx-auto text-sm">
-            Start with the Traffic Split simulator — it covers the most ground and has the deepest
-            study material of any module.
-          </p>
-          <div className="relative flex flex-wrap gap-3 justify-center pt-2">
-            <Link href="/labs/deployment/traffic-split"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all hover:-translate-y-0.5">
-              Start with Traffic Split
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link href="/study-guide/deployment/traffic-split"
-              className="px-6 py-2.5 rounded-xl border border-slate-700 hover:border-slate-500 text-slate-300 font-semibold text-sm transition-all">
-              Read study guide first
-            </Link>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

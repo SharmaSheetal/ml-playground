@@ -13,15 +13,15 @@ interface Props {
 }
 
 function gateColor(g: GateStatus) {
-  if (g === 'pass')    return 'text-emerald-400';
-  if (g === 'fail')    return 'text-red-400';
-  return 'text-slate-400';
+  if (g === 'pass')    return 'text-green-600';
+  if (g === 'fail')    return 'text-red-600';
+  return 'text-gray-500';
 }
 
 function deltaColor(delta: number, invertGood = false) {
   const bad = invertGood ? delta < 0 : delta > 0;
-  if (Math.abs(delta) < 1) return 'text-slate-400';
-  return bad ? 'text-red-400' : 'text-emerald-400';
+  if (Math.abs(delta) < 1) return 'text-gray-500';
+  return bad ? 'text-red-600' : 'text-green-600';
 }
 
 function MetricRow({
@@ -40,25 +40,25 @@ function MetricRow({
   const g     = gates[gateKey];
 
   return (
-    <div className="grid grid-cols-3 items-center gap-4 py-3 border-b border-slate-700/50 last:border-0">
+    <div className="grid grid-cols-3 items-center gap-4 py-3 border-b border-gray-200 last:border-0">
       {/* Label + gate badge */}
       <div className="flex items-center gap-2">
         <span className={`text-xs font-bold ${gateColor(g)}`}>
           {g === 'pass' ? '●' : g === 'fail' ? '✕' : '○'}
         </span>
-        <span className="text-sm text-slate-300">{label}</span>
+        <span className="text-sm text-gray-700">{label}</span>
       </div>
 
       {/* Champion */}
       <div className="text-center">
-        <span className="text-sm font-mono text-slate-300">
+        <span className="text-sm font-mono text-gray-700">
           {champVal.toFixed(unit === 'ms' ? 0 : 3)}{unit}
         </span>
       </div>
 
       {/* Canary */}
       <div className="text-center">
-        <span className={`text-sm font-mono font-bold ${g === 'fail' ? 'text-red-400' : g === 'pass' ? 'text-emerald-300' : 'text-slate-300'}`}>
+        <span className={`text-sm font-mono font-bold ${g === 'fail' ? 'text-red-600' : g === 'pass' ? 'text-green-600' : 'text-gray-700'}`}>
           {canaryVal.toFixed(unit === 'ms' ? 0 : 3)}{unit}
         </span>
         <span className={`ml-1.5 text-[10px] ${deltaColor(pct, !higherIsBad)}`}>
@@ -79,24 +79,24 @@ export default function MetricsPanel({ champion, canary, gates, fault, status, s
   const isLive = status === 'observing';
 
   return (
-    <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5 space-y-5">
+    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-200">Live Metrics</h3>
-        <div className="flex items-center gap-3 text-xs text-slate-500">
+        <h3 className="text-sm font-semibold text-gray-800">Live Metrics</h3>
+        <div className="flex items-center gap-3 text-xs text-gray-400">
           <span className="flex items-center gap-1">
-            <span className="inline-block w-2 h-2 rounded-full bg-slate-500" />
+            <span className="inline-block w-2 h-2 rounded-full bg-gray-400" />
             Champion
           </span>
           <span className="flex items-center gap-1">
-            <span className={`inline-block w-2 h-2 rounded-full ${isLive ? 'bg-amber-400 animate-pulse' : 'bg-slate-600'}`} />
+            <span className={`inline-block w-2 h-2 rounded-full ${isLive ? 'bg-amber-400 animate-pulse' : 'bg-gray-300'}`} />
             Canary ({stageIdx > 0 ? `${[0,1,5,25,50,100][stageIdx]}%` : '—'})
           </span>
         </div>
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-3 gap-4 text-xs font-semibold text-slate-500 uppercase tracking-wider pb-1 border-b border-slate-700">
+      <div className="grid grid-cols-3 gap-4 text-xs font-semibold text-gray-400 uppercase tracking-wider pb-1 border-b border-gray-200">
         <span>Metric</span>
         <span className="text-center">Champion</span>
         <span className="text-center">Canary</span>
@@ -117,17 +117,17 @@ export default function MetricsPanel({ champion, canary, gates, fault, status, s
       />
 
       {/* Gate legend */}
-      <div className="flex gap-4 text-[10px] text-slate-500 pt-1">
-        <span><span className="text-emerald-400">●</span> Pass</span>
-        <span><span className="text-red-400">✕</span> Fail</span>
-        <span><span className="text-slate-400">○</span> Pending</span>
+      <div className="flex gap-4 text-[10px] text-gray-400 pt-1">
+        <span><span className="text-green-600">●</span> Pass</span>
+        <span><span className="text-red-600">✕</span> Fail</span>
+        <span><span className="text-gray-400">○</span> Pending</span>
         <span className="ml-auto">Thresholds: P99 ≤105% champ · Error &lt;1% · PSI &lt;0.1</span>
       </div>
 
       {/* Fault injection */}
       {isLive && (
-        <div className="pt-3 border-t border-slate-700">
-          <p className="text-xs text-slate-500 mb-2 font-semibold uppercase tracking-wider">
+        <div className="pt-3 border-t border-gray-200">
+          <p className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wider">
             Fault Injection
           </p>
           <div className="flex flex-wrap gap-2">
@@ -139,11 +139,11 @@ export default function MetricsPanel({ champion, canary, gates, fault, status, s
                   'px-3 py-1.5 rounded-lg border text-xs font-medium transition-all',
                   fault === f.key
                     ? f.color === 'amber'
-                      ? 'bg-amber-500/20 border-amber-500/60 text-amber-300'
+                      ? 'bg-amber-50 border-amber-200 text-amber-600'
                       : f.color === 'red'
-                        ? 'bg-red-500/20 border-red-500/60 text-red-300'
-                        : 'bg-violet-500/20 border-violet-500/60 text-violet-300'
-                    : 'bg-slate-700 border-slate-600 text-slate-400 hover:text-slate-200 hover:border-slate-500',
+                        ? 'bg-red-50 border-red-200 text-red-600'
+                        : 'bg-violet-50 border-violet-200 text-violet-600'
+                    : 'bg-gray-50 border-gray-200 text-gray-500 hover:text-gray-700 hover:border-gray-300',
                 ].join(' ')}
               >
                 {fault === f.key ? '✕ Clear' : f.label}
