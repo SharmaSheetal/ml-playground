@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { ask, type LLMSource } from '@/lib/llm';
+import { InterviewPDFModal, type SessionAnswer } from './InterviewPDFModal';
 
 /* ── Shared types ─────────────────────────────────────────────────────────── */
 export interface InterviewQ {
@@ -113,16 +114,16 @@ function buildFallback(q: InterviewQ | DynamicQ, answer: string): string {
 
 /* ── Bubble components ────────────────────────────────────────────────────── */
 const DIFFICULTY_STYLE = {
-  junior: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/5',
-  mid:    'text-amber-400   border-amber-500/30   bg-amber-500/5',
-  senior: 'text-red-400     border-red-500/30     bg-red-500/5',
+  junior: 'text-green-700  border-green-200  bg-green-50',
+  mid:    'text-amber-700  border-amber-200  bg-amber-50',
+  senior: 'text-red-700    border-red-200    bg-red-50',
 };
 
 function InterviewerBubble({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="w-7 h-7 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0 mt-0.5">
-        <span className="text-xs text-indigo-400 font-bold font-mono">AI</span>
+      <div className="w-7 h-7 rounded-full bg-white border border-blue-200 flex items-center justify-center shrink-0 mt-0.5">
+        <span className="text-xs text-blue-600 font-bold">AI</span>
       </div>
       <div className="flex-1">{children}</div>
     </div>
@@ -132,8 +133,8 @@ function InterviewerBubble({ children }: { children: React.ReactNode }) {
 function UserBubble({ text }: { text: string }) {
   return (
     <div className="flex justify-end">
-      <div className="max-w-[80%] bg-indigo-600/15 border border-indigo-500/25 rounded-2xl rounded-tr-sm px-4 py-3">
-        <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">{text}</p>
+      <div className="max-w-[80%] bg-blue-50 border border-blue-200 rounded-2xl rounded-tr-sm px-4 py-3">
+        <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{text}</p>
       </div>
     </div>
   );
@@ -142,11 +143,11 @@ function UserBubble({ text }: { text: string }) {
 function ThinkingBubble() {
   return (
     <InterviewerBubble>
-      <div className="inline-flex items-center gap-1.5 px-4 py-3 bg-slate-800/60 border border-slate-700 rounded-2xl rounded-tl-sm">
+      <div className="inline-flex items-center gap-1.5 px-4 py-3 bg-white border border-gray-200 rounded-2xl rounded-tl-sm">
         {[0, 0.2, 0.4].map(delay => (
           <motion.span
             key={delay}
-            className="w-1.5 h-1.5 rounded-full bg-slate-500"
+            className="w-1.5 h-1.5 rounded-full bg-gray-300"
             animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
             transition={{ duration: 0.9, delay, repeat: Infinity }}
           />
@@ -166,16 +167,16 @@ function QuestionBubble({ q, moduleCategory, moduleTitle }: {
     <InterviewerBubble>
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-slate-500">
+          <span className="text-xs text-gray-400">
             {isDyn ? 'AI Generated' : `${moduleCategory} · ${moduleTitle}`}
           </span>
-          <span className={clsx('text-xs font-mono px-2 py-0.5 rounded-full border',
-            isDyn ? 'text-violet-400 border-violet-500/30 bg-violet-500/5' : DIFFICULTY_STYLE[q.difficulty])}>
+          <span className={clsx('text-xs px-2 py-0.5 rounded border',
+            isDyn ? 'text-violet-700 border-violet-200 bg-violet-50' : DIFFICULTY_STYLE[q.difficulty])}>
             {isDyn ? 'extended' : q.difficulty}
           </span>
         </div>
-        <div className="bg-slate-800/60 border border-slate-700 rounded-2xl rounded-tl-sm px-4 py-3.5">
-          <p className="text-slate-100 text-sm leading-relaxed">{q.question}</p>
+        <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3.5">
+          <p className="text-gray-900 text-sm leading-relaxed">{q.question}</p>
         </div>
       </div>
     </InterviewerBubble>
@@ -187,31 +188,31 @@ function FeedbackBubble({ parsed, source, warn }: { parsed: ParsedFeedback; sour
   const isBorderline = /borderline/i.test(parsed.signal);
 
   const cards = [
-    { label: '✓  Got Right', text: parsed.gotRight, color: 'border-emerald-500/25 bg-emerald-500/5 text-emerald-400', body: 'text-slate-300' },
-    { label: '✗  Missed',    text: parsed.missed,   color: 'border-red-500/25 bg-red-500/5 text-red-400',             body: 'text-slate-300' },
-    { label: '→  Follow-up', text: parsed.followUp, color: 'border-indigo-500/25 bg-indigo-500/5 text-indigo-400',    body: 'text-slate-200 italic' },
+    { label: 'Got Right', text: parsed.gotRight, cls: 'border-green-200 bg-green-50', labelCls: 'text-green-700', bodyCls: 'text-gray-700' },
+    { label: 'Missed',    text: parsed.missed,   cls: 'border-red-200   bg-red-50',   labelCls: 'text-red-700',   bodyCls: 'text-gray-700' },
+    { label: 'Follow-up', text: parsed.followUp, cls: 'border-blue-200  bg-blue-50',  labelCls: 'text-blue-700',  bodyCls: 'text-gray-700 italic' },
   ].filter(c => c.text);
 
   return (
     <InterviewerBubble>
       <div className="space-y-2.5 max-w-[90%]">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-mono text-slate-600">
+          <span className="text-xs text-gray-400">
             {source === 'user-key' ? 'Your API key' : source === 'server-key' ? 'Server AI' : 'Auto-evaluated'}
           </span>
-          {warn && <span className="text-xs text-amber-400 font-mono">{warn}</span>}
+          {warn && <span className="text-xs text-amber-600">{warn}</span>}
         </div>
 
-        {cards.map(({ label, text, color, body }, i) => (
+        {cards.map(({ label, text, cls, labelCls, bodyCls }, i) => (
           <motion.div
             key={label}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.12, duration: 0.2 }}
-            className={clsx('rounded-xl border px-4 py-3 space-y-1.5', color)}
+            className={clsx('rounded-lg border px-4 py-3 space-y-1.5', cls)}
           >
-            <p className="text-xs font-mono font-semibold">{label}</p>
-            <p className={clsx('text-sm leading-relaxed whitespace-pre-line', body)}>{text}</p>
+            <p className={clsx('text-xs font-semibold uppercase tracking-wider', labelCls)}>{label}</p>
+            <p className={clsx('text-sm leading-relaxed whitespace-pre-line', bodyCls)}>{text}</p>
           </motion.div>
         ))}
 
@@ -221,13 +222,13 @@ function FeedbackBubble({ parsed, source, warn }: { parsed: ParsedFeedback; sour
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: cards.length * 0.12, duration: 0.2 }}
             className={clsx(
-              'inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-mono font-semibold',
-              isPass       ? 'border-emerald-500/40 bg-emerald-500/8 text-emerald-400' :
-              isBorderline ? 'border-amber-500/40   bg-amber-500/8   text-amber-400'  :
-                             'border-red-500/40     bg-red-500/8     text-red-400'
+              'inline-flex items-center gap-2 px-3 py-1.5 rounded border text-xs font-medium',
+              isPass       ? 'border-green-200 bg-green-50  text-green-700' :
+              isBorderline ? 'border-amber-200 bg-amber-50  text-amber-700' :
+                             'border-red-200   bg-red-50    text-red-700'
             )}
           >
-            <span className={clsx('w-1.5 h-1.5 rounded-full', isPass ? 'bg-emerald-400' : isBorderline ? 'bg-amber-400' : 'bg-red-400')} />
+            <span className={clsx('w-1.5 h-1.5 rounded-full', isPass ? 'bg-green-500' : isBorderline ? 'bg-amber-500' : 'bg-red-500')} />
             {parsed.signal}
           </motion.div>
         )}
@@ -237,11 +238,12 @@ function FeedbackBubble({ parsed, source, warn }: { parsed: ParsedFeedback; sour
 }
 
 /* ── Completion modal ─────────────────────────────────────────────────────── */
-function CompletionModal({ total, signals, onFresh, onContinue }: {
+function CompletionModal({ total, signals, onFresh, onContinue, onShowPDF }: {
   total:      number;
   signals:    (SignalLevel | undefined)[];
   onFresh:    () => void;
   onContinue: () => void;
+  onShowPDF:  () => void;
 }) {
   const answered    = signals.filter(Boolean).length;
   const passes      = signals.filter(s => s === 'pass').length;
@@ -249,38 +251,30 @@ function CompletionModal({ total, signals, onFresh, onContinue }: {
   const fails       = signals.filter(s => s === 'fail').length;
   const allStrong   = passes === answered && answered > 0;
 
-  const DOT = { pass: 'bg-emerald-400', borderline: 'bg-amber-400', fail: 'bg-red-400', undefined: 'bg-slate-700' };
+  const DOT: Record<string, string> = {
+    pass: 'bg-green-500', borderline: 'bg-amber-400', fail: 'bg-red-400', undefined: 'bg-gray-200',
+  };
 
   return (
     <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-      <motion.div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={onContinue} />
+      <motion.div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" onClick={onContinue} />
       <motion.div
-        className="relative z-10 w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-7 shadow-2xl shadow-black/60"
+        className="relative z-10 w-full max-w-sm bg-white border border-gray-200 rounded-xl p-7 shadow-xl shadow-gray-200/60"
         initial={{ scale: 0.88, opacity: 0, y: 20 }}
         animate={{ scale: 1,    opacity: 1, y: 0  }}
         exit={{    scale: 0.88, opacity: 0, y: 20 }}
         transition={{ type: 'spring', stiffness: 300, damping: 24 }}
       >
         <div className="flex justify-center mb-5">
-          <div className="relative w-16 h-16 flex items-center justify-center">
-            {[1, 1.4, 1.8].map((scale, i) => (
-              <motion.div
-                key={i}
-                className="absolute inset-0 rounded-full border border-indigo-500/30"
-                animate={{ scale: [scale, scale + 0.25, scale], opacity: [0.5, 0, 0.5] }}
-                transition={{ duration: 2.4, delay: i * 0.5, repeat: Infinity, ease: 'easeInOut' }}
-              />
-            ))}
-            <div className="w-12 h-12 rounded-full bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center">
-              <span className="text-xl font-bold text-indigo-400">{allStrong ? '★' : '✓'}</span>
-            </div>
+          <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center">
+            <span className="text-xl font-bold text-blue-600">{allStrong ? '★' : '✓'}</span>
           </div>
         </div>
 
-        <h2 className="text-center text-lg font-bold text-slate-100 mb-1">
+        <h2 className="text-center text-base font-semibold text-gray-900 mb-1">
           {allStrong ? 'Outstanding!' : 'Session complete'}
         </h2>
-        <p className="text-center text-xs text-slate-500 font-mono mb-5">
+        <p className="text-center text-xs text-gray-500 mb-5">
           {allStrong
             ? `All ${answered} questions — Strong pass`
             : `You covered all ${total} topics in this round`}
@@ -302,12 +296,12 @@ function CompletionModal({ total, signals, onFresh, onContinue }: {
         {answered > 0 && (
           <div className="grid grid-cols-3 gap-2 mb-6">
             {[
-              { label: 'Strong',     count: passes,      color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5' },
-              { label: 'Borderline', count: borderlines,  color: 'text-amber-400   border-amber-500/20   bg-amber-500/5'   },
-              { label: 'Weak',       count: fails,        color: 'text-red-400     border-red-500/20     bg-red-500/5'     },
-            ].map(({ label, count, color }) => (
-              <motion.div key={label} className={clsx('rounded-xl border px-2 py-2.5 text-center', color)} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                <p className="text-lg font-bold font-mono">{count}</p>
+              { label: 'Strong',     count: passes,      cls: 'text-green-700 border-green-200 bg-green-50' },
+              { label: 'Borderline', count: borderlines,  cls: 'text-amber-700 border-amber-200 bg-amber-50' },
+              { label: 'Weak',       count: fails,        cls: 'text-red-700   border-red-200   bg-red-50'   },
+            ].map(({ label, count, cls }) => (
+              <motion.div key={label} className={clsx('rounded-lg border px-2 py-2.5 text-center', cls)} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                <p className="text-lg font-bold tabular-nums">{count}</p>
                 <p className="text-xs opacity-70">{label}</p>
               </motion.div>
             ))}
@@ -315,10 +309,13 @@ function CompletionModal({ total, signals, onFresh, onContinue }: {
         )}
 
         <div className="space-y-2.5">
-          <button onClick={onContinue} className="w-full py-2.5 rounded-xl border border-indigo-600/50 text-indigo-400 text-sm font-mono font-semibold hover:border-indigo-400 hover:bg-indigo-500/5 active:scale-95 transition-all">
-            Keep going →
+          <button onClick={onContinue} className="w-full py-2.5 rounded-lg border border-blue-300 text-blue-700 bg-blue-50 text-sm font-medium hover:bg-blue-100 active:scale-95 transition-all">
+            Keep going
           </button>
-          <button onClick={onFresh} className="w-full py-2.5 rounded-xl border border-slate-700 text-slate-500 text-sm font-mono hover:text-slate-300 hover:border-slate-600 active:scale-95 transition-all">
+          <button onClick={onShowPDF} className="w-full py-2.5 rounded-lg border border-gray-200 text-gray-700 bg-white text-sm font-medium hover:border-gray-300 hover:bg-gray-50 active:scale-95 transition-all">
+            Interview preparation guide
+          </button>
+          <button onClick={onFresh} className="w-full py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">
             Start fresh
           </button>
         </div>
@@ -349,6 +346,8 @@ export function MockInterviewRunner({
   const [waiting,        setWaiting]        = useState(false);
   const [showModel,      setShowModel]      = useState(false);
   const [showCompletion, setShowCompletion] = useState(false);
+  const [showPDFModal,   setShowPDFModal]   = useState(false);
+  const [sessionAnswers, setSessionAnswers] = useState<SessionAnswer[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -408,6 +407,8 @@ Return only the question. No preamble.`;
     setInput('');
     setShowModel(false);
     setShowCompletion(false);
+    setShowPDFModal(false);
+    setSessionAnswers([]);
   }
 
   async function handleSend() {
@@ -433,6 +434,21 @@ Return only the question. No preamble.`;
       return next;
     });
 
+    if (qIndex < staticCount) {
+      setSessionAnswers(prev => {
+        const filtered = prev.filter(sa => sa.question !== q.question);
+        return [...filtered, {
+          question:   q.question,
+          difficulty: q.difficulty,
+          userAnswer: text,
+          gotRight:   parsed.gotRight,
+          missed:     parsed.missed,
+          followUp:   parsed.followUp,
+          signal:     signalLevel(parsed.signal),
+        }];
+      });
+    }
+
     setMessages(prev => [
       ...prev.filter(m => m.id !== tid),
       { id: `f${Date.now()}`, kind: 'feedback', parsed, source: res.source, warn, qIdx: qIndex },
@@ -447,11 +463,11 @@ Return only the question. No preamble.`;
 
   const dotColor = (i: number) => {
     const s = signals[i];
-    if (s === 'pass')       return 'bg-emerald-400';
+    if (s === 'pass')       return 'bg-green-500';
     if (s === 'borderline') return 'bg-amber-400';
     if (s === 'fail')       return 'bg-red-400';
-    if (i === idx)          return 'bg-indigo-500 ring-2 ring-indigo-500/30';
-    return 'bg-slate-700';
+    if (i === idx)          return 'bg-blue-500 ring-2 ring-blue-200';
+    return 'bg-gray-200';
   };
 
   return (
@@ -461,14 +477,14 @@ Return only the question. No preamble.`;
         {/* Header */}
         <div className="flex items-center justify-between mb-4 shrink-0">
           <div>
-            <h1 className="text-lg font-bold text-slate-100 tracking-tight">
+            <h1 className="text-base font-semibold text-gray-900">
               {moduleCategory} · {moduleTitle}
             </h1>
-            <p className="text-slate-500 text-xs mt-0.5">
+            <p className="text-gray-500 text-xs mt-0.5">
               Answer as you would in a real interview. AI evaluates your response.
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
             {questions.slice(0, staticCount).map((_, i) => (
               <motion.div
                 key={i}
@@ -477,10 +493,10 @@ Return only the question. No preamble.`;
                 transition={{ duration: 0.4 }}
               />
             ))}
-            <span className="text-xs font-mono text-slate-600 ml-1">
+            <span className="text-xs text-gray-400 ml-1 tabular-nums">
               {idx + 1}/{staticCount}
               {questions.length > staticCount && (
-                <span className="text-violet-500"> +{questions.length - staticCount} AI</span>
+                <span className="text-violet-600"> +{questions.length - staticCount}</span>
               )}
             </span>
           </div>
@@ -503,13 +519,13 @@ Return only the question. No preamble.`;
                 {msg.kind === 'thinking'     && <ThinkingBubble />}
                 {msg.kind === 'gen-question' && (
                   <InterviewerBubble>
-                    <div className="flex items-center gap-2 px-4 py-3 bg-slate-800/60 border border-violet-500/20 rounded-2xl rounded-tl-sm">
+                    <div className="flex items-center gap-2 px-4 py-3 bg-white border border-violet-200 rounded-2xl rounded-tl-sm">
                       {[0, 0.2, 0.4].map(d => (
                         <motion.span key={d} className="w-1.5 h-1.5 rounded-full bg-violet-400"
                           animate={{ opacity: [0.3, 1, 0.3], y: [0, -3, 0] }}
                           transition={{ duration: 0.9, delay: d, repeat: Infinity }} />
                       ))}
-                      <span className="text-xs text-violet-400 font-mono ml-1">Generating next question…</span>
+                      <span className="text-xs text-violet-600 ml-1">Generating next question…</span>
                     </div>
                   </InterviewerBubble>
                 )}
@@ -525,7 +541,7 @@ Return only the question. No preamble.`;
             <div className="pl-10">
               <button
                 onClick={() => setShowModel(v => !v)}
-                className="text-xs font-mono text-slate-600 hover:text-slate-400 transition-colors"
+                className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
               >
                 {showModel ? '▲ Hide model answer' : '▼ See model answer + key points'}
               </button>
@@ -538,24 +554,24 @@ Return only the question. No preamble.`;
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="mt-3 space-y-3 border-l-2 border-slate-700 pl-4">
+                    <div className="mt-3 space-y-3 border-l-2 border-gray-200 pl-4">
                       {(currentQ.answer || currentQ.modelAnswer) && (
-                        <p className="text-sm text-slate-400 leading-relaxed whitespace-pre-line">
+                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
                           {currentQ.answer ?? currentQ.modelAnswer}
                         </p>
                       )}
                       <div className="space-y-1">
                         {currentQ.keyPoints.map((kp, i) => (
-                          <div key={i} className="flex gap-2 text-xs text-slate-500">
-                            <span className="text-indigo-500 shrink-0">•</span>
+                          <div key={i} className="flex gap-2 text-xs text-gray-500">
+                            <span className="text-blue-500 shrink-0">•</span>
                             <span>{kp}</span>
                           </div>
                         ))}
                       </div>
                       {currentQ.trap && (
-                        <div className="px-3 py-2 rounded-lg border border-amber-500/20 bg-amber-500/5">
-                          <p className="text-xs font-mono text-amber-400 font-semibold mb-0.5">TRAP</p>
-                          <p className="text-xs text-slate-400">{currentQ.trap}</p>
+                        <div className="px-3 py-2 rounded-lg border border-amber-200 bg-amber-50">
+                          <p className="text-xs font-semibold text-amber-700 mb-0.5">TRAP</p>
+                          <p className="text-xs text-gray-600">{currentQ.trap}</p>
                         </div>
                       )}
                     </div>
@@ -569,22 +585,22 @@ Return only the question. No preamble.`;
         </div>
 
         {/* Input area */}
-        <div className="shrink-0 pt-3 border-t border-slate-800 space-y-2">
+        <div className="shrink-0 pt-3 border-t border-gray-200 space-y-2">
           {feedbackShown ? (
             <div className="flex justify-between items-center">
               {!currentQ.isDynamic && (currentQ.answer || currentQ.modelAnswer || currentQ.keyPoints.length > 0) ? (
                 <button
                   onClick={() => setShowModel(v => !v)}
-                  className="text-xs font-mono text-slate-600 hover:text-slate-400 transition-colors"
+                  className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showModel ? 'Hide answer' : 'Model answer'}
                 </button>
               ) : <div />}
               <button
                 onClick={nextQuestion}
-                className="px-5 py-2 rounded-lg border border-indigo-600/60 text-indigo-400 text-xs font-mono font-semibold hover:border-indigo-400 hover:bg-indigo-500/5 active:scale-95 transition-all"
+                className="px-5 py-2 rounded-lg border border-blue-300 text-blue-700 bg-blue-50 text-xs font-medium hover:bg-blue-100 active:scale-95 transition-all"
               >
-                {isLastStatic ? 'See results →' : 'Next question →'}
+                {isLastStatic ? 'See results' : 'Next question'}
               </button>
             </div>
           ) : (
@@ -593,19 +609,19 @@ Return only the question. No preamble.`;
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSend(); }}
-                placeholder="Type your answer… (⌘ Enter to send)"
+                placeholder="Type your answer… (Cmd+Enter to send)"
                 rows={3}
                 disabled={waiting}
-                className="flex-1 bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 font-mono leading-relaxed focus:outline-none focus:border-indigo-500/60 resize-none transition-colors"
+                className="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-900 placeholder-gray-400 leading-relaxed focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-200 resize-none transition-colors"
               />
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || waiting}
                 className={clsx(
-                  'px-4 py-3 rounded-xl border text-xs font-mono font-semibold transition-all self-end',
+                  'px-4 py-3 rounded-lg border text-xs font-medium transition-all self-end',
                   !input.trim() || waiting
-                    ? 'border-slate-800 text-slate-700 cursor-not-allowed'
-                    : 'border-indigo-600/60 text-indigo-400 hover:border-indigo-400 hover:bg-indigo-500/5 active:scale-95'
+                    ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-white'
+                    : 'border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100 active:scale-95'
                 )}
               >
                 {waiting ? '…' : 'Send'}
@@ -618,12 +634,26 @@ Return only the question. No preamble.`;
 
       {/* Completion modal */}
       <AnimatePresence>
-        {showCompletion && (
+        {showCompletion && !showPDFModal && (
           <CompletionModal
             total={staticCount}
             signals={signals.slice(0, staticCount)}
             onFresh={handleStartFresh}
             onContinue={handleKeepGoing}
+            onShowPDF={() => { setShowCompletion(false); setShowPDFModal(true); }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Interview PDF modal */}
+      <AnimatePresence>
+        {showPDFModal && (
+          <InterviewPDFModal
+            interviewQA={interviewQA}
+            moduleTitle={moduleTitle}
+            moduleCategory={moduleCategory}
+            sessionAnswers={sessionAnswers}
+            onClose={() => setShowPDFModal(false)}
           />
         )}
       </AnimatePresence>
