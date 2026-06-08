@@ -1,184 +1,130 @@
 import Link from 'next/link';
-import { Rocket, BarChart3, Cpu, Layers } from 'lucide-react';
+import { Network, GitBranch, Eye, Zap, BarChart3, Cpu, Layers, ArrowRight } from 'lucide-react';
 
-const CATEGORIES = [
+interface Mod {
+  slug: string; title: string; desc: string;
+  Icon: React.ElementType; questions: number; live: boolean; category: string;
+}
+interface Area { id: string; label: string; Icon: React.ElementType; color: string; mods: Mod[]; }
+
+const AREAS: Area[] = [
   {
-    id:    'deployment',
-    label: 'Deployment',
-    color: 'blue',
-    Icon:  Rocket,
-    modules: [
-      {
-        slug:        'deployment/traffic-split',
-        title:       'Traffic Split',
-        description: 'Canary releases, blue/green, shadow mode, rollback, P99, champion/challenger, serving patterns.',
-        questions:   55,
-        live:        true,
-      },
-      {
-        slug:        'deployment/canary-release',
-        title:       'Canary Release',
-        description: 'Staged traffic promotion, observation windows, automated gates, PSI, Argo Rollouts.',
-        questions:   26,
-        live:        true,
-      },
-      {
-        slug:        'deployment/shadow-mode',
-        title:       'Shadow Mode',
-        description: 'Request mirroring, output comparison, risk-free validation.',
-        questions:   0,
-        live:        false,
-      },
+    id: 'deployment', label: 'Deployment', Icon: Network, color: 'text-blue-600',
+    mods: [
+      { slug: 'traffic-split',     title: 'Traffic Split',     desc: 'Routing architecture, gate design, champion/challenger evaluation, rollback criteria',   Icon: Network,   questions: 55, live: true,  category: 'deployment' },
+      { slug: 'canary-release',    title: 'Canary Release',    desc: 'Staged rollout strategy, PSI thresholds, observation windows, Argo Rollouts config',     Icon: GitBranch, questions: 26, live: true,  category: 'deployment' },
+      { slug: 'shadow-mode',       title: 'Shadow Mode',       desc: 'Traffic mirroring, divergence analysis, Istio/Envoy, stateful service constraints',       Icon: Eye,       questions: 19, live: true,  category: 'deployment' },
+      { slug: 'latency-optimizer', title: 'Latency Optimizer', desc: 'Quantization tradeoffs, batching strategies, TensorRT, caching, P99 SLA design',         Icon: Zap,       questions: 20, live: true,  category: 'deployment' },
     ],
   },
   {
-    id:    'monitoring',
-    label: 'Monitoring',
-    color: 'emerald',
-    Icon:  BarChart3,
-    modules: [
-      {
-        slug:        'monitoring/drift-detection',
-        title:       'Drift Detection',
-        description: 'Feature drift, concept drift, PSI, KL divergence, alerting strategies.',
-        questions:   0,
-        live:        false,
-      },
-      {
-        slug:        'monitoring/metrics-layers',
-        title:       'Four-Layer Metrics',
-        description: 'Infrastructure, model quality, business, and data quality layers.',
-        questions:   0,
-        live:        false,
-      },
+    id: 'monitoring', label: 'Monitoring', Icon: BarChart3, color: 'text-emerald-600',
+    mods: [
+      { slug: 'drift-detection',   title: 'Drift Detection',    desc: 'PSI, KL divergence, covariate shift, threshold selection, alerting',  Icon: BarChart3, questions: 26, live: true, category: 'monitoring' },
+      { slug: 'metrics-dashboard', title: 'Four-Layer Metrics', desc: 'Infrastructure, model quality, business, data quality metric design',  Icon: BarChart3, questions: 21, live: true, category: 'monitoring' },
+      { slug: 'alert-threshold',   title: 'Alert Threshold',    desc: 'Precision/recall tradeoffs in alerting systems, alert fatigue',        Icon: BarChart3, questions: 20, live: true, category: 'monitoring' },
+      { slug: 'ab-significance',   title: 'A/B Significance',   desc: 'Statistical power, sample sizing, sequential testing, bandits',       Icon: BarChart3, questions: 20, live: true, category: 'monitoring' },
     ],
   },
   {
-    id:    'mlops',
-    label: 'MLOps',
-    color: 'purple',
-    Icon:  Cpu,
-    modules: [
-      {
-        slug:        'mlops/retraining',
-        title:       'Retraining Triggers',
-        description: 'Scheduled vs. drift-triggered retraining, data flywheel, versioning.',
-        questions:   0,
-        live:        false,
-      },
-      {
-        slug:        'mlops/feature-store',
-        title:       'Feature Store',
-        description: 'Online vs. offline stores, training-serving skew, feature freshness.',
-        questions:   0,
-        live:        false,
-      },
+    id: 'mlops', label: 'MLOps', Icon: Cpu, color: 'text-violet-600',
+    mods: [
+      { slug: 'retraining-trigger', title: 'Retraining Triggers', desc: 'Scheduled vs drift-triggered, data flywheel, model versioning',  Icon: Cpu, questions: 23, live: true, category: 'mlops' },
+      { slug: 'feature-store',      title: 'Feature Store',       desc: 'Online/offline stores, training-serving skew, feature freshness', Icon: Cpu, questions: 20, live: true, category: 'mlops' },
+      { slug: 'skew-detector',      title: 'Skew Detector',       desc: 'Detecting distribution mismatch between training and serving',     Icon: Cpu, questions: 19, live: true, category: 'mlops' },
+      { slug: 'cicd-pipeline',      title: 'CI/CD Pipeline',      desc: 'Model validation, staging gates, automated promotion',            Icon: Cpu, questions: 19, live: true, category: 'mlops' },
     ],
   },
   {
-    id:    'system-design',
-    label: 'System Design',
-    color: 'rose',
-    Icon:  Layers,
-    modules: [
-      {
-        slug:        'system-design/recommender',
-        title:       'Two-Stage Recommender',
-        description: 'Candidate retrieval, ranking, business rules, cold-start strategies.',
-        questions:   0,
-        live:        false,
-      },
+    id: 'system-design', label: 'System Design', Icon: Layers, color: 'text-amber-600',
+    mods: [
+      { slug: 'recommender',      title: 'Two-Stage Recommender', desc: 'Retrieval, ranking, cold-start, business rule injection',   Icon: Layers, questions: 23, live: true, category: 'system-design' },
+      { slug: 'fraud-detection',  title: 'Fraud Detection',       desc: 'Real-time scoring, threshold tuning, reject inference',      Icon: Layers, questions: 19, live: true, category: 'system-design' },
+      { slug: 'scalability',      title: 'Scalability',           desc: 'Throughput, fan-out latency, horizontal vs vertical scaling', Icon: Layers, questions: 18, live: true, category: 'system-design' },
+      { slug: 'precision-recall', title: 'Precision / Recall',    desc: 'ROC curves, threshold impact on business cost',              Icon: Layers, questions: 19, live: true, category: 'system-design' },
     ],
   },
 ];
 
-const COLOR = {
-  blue:    { icon: 'text-blue-400',    badge: 'bg-blue-500/10 border-blue-500/20 text-blue-400',    heading: 'text-blue-400',    card: 'hover:border-blue-500/30' },
-  emerald: { icon: 'text-emerald-400', badge: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', heading: 'text-emerald-400', card: 'hover:border-emerald-500/30' },
-  purple:  { icon: 'text-purple-400',  badge: 'bg-purple-500/10 border-purple-500/20 text-purple-400',  heading: 'text-purple-400',  card: 'hover:border-purple-500/30' },
-  rose:    { icon: 'text-rose-400',    badge: 'bg-rose-500/10 border-rose-500/20 text-rose-400',    heading: 'text-rose-400',    card: 'hover:border-rose-500/30' },
-} as const;
+function ModRow({ mod }: { mod: Mod }) {
+  const { Icon } = mod;
+  const row = (
+    <div className={[
+      'flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100 last:border-0 transition-colors',
+      mod.live ? 'hover:bg-gray-50 cursor-pointer' : 'opacity-40 cursor-not-allowed',
+    ].join(' ')}>
+      <div className="w-6 h-6 rounded flex items-center justify-center bg-gray-50 border border-gray-200 shrink-0">
+        <Icon className="w-3 h-3 text-gray-500" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-medium text-gray-900">{mod.title}</span>
+        <p className="text-xs text-gray-400 mt-0.5 truncate">{mod.desc}</p>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        {mod.live ? (
+          <>
+            <span className="text-xs text-gray-400">{mod.questions} questions</span>
+            <span className="flex items-center gap-1 text-[10px] font-medium text-green-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />Live
+            </span>
+            <ArrowRight className="w-3.5 h-3.5 text-gray-300" />
+          </>
+        ) : (
+          <span className="text-[10px] text-gray-400">Soon</span>
+        )}
+      </div>
+    </div>
+  );
+  if (!mod.live) return row;
+  return <Link href={`/mock-interview/${mod.category}/${mod.slug}`}>{row}</Link>;
+}
 
-const totalQ    = CATEGORIES.flatMap(c => c.modules).reduce((s, m) => s + m.questions, 0);
-const liveMods  = CATEGORIES.flatMap(c => c.modules).filter(m => m.live).length;
+const totalLive      = AREAS.flatMap(a => a.mods).filter(m => m.live).length;
+const totalQuestions = AREAS.flatMap(a => a.mods).reduce((s, m) => s + m.questions, 0);
 
 export default function MockInterviewPage() {
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12 space-y-12">
+    <div className="max-w-5xl mx-auto px-6 py-8">
 
-      {/* Header */}
-      <div className="space-y-4">
-        <h1 className="text-3xl font-bold text-slate-100 tracking-tight">Mock Interview</h1>
-        <p className="text-slate-400 max-w-2xl leading-relaxed">
-          Real MLOps interview questions, one module at a time. Answer as you would in a real
-          interview — AI evaluates with GOT RIGHT / MISSED / FOLLOW-UP and a hire signal.
-        </p>
-
-        <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="text-xs font-mono text-slate-300">{liveMods} live modules</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700">
-            <span className="w-2 h-2 rounded-full bg-indigo-400" />
-            <span className="text-xs font-mono text-slate-300">{totalQ}+ questions</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700">
-            <span className="w-2 h-2 rounded-full bg-violet-400" />
-            <span className="text-xs font-mono text-slate-300">Shuffled · AI eval · Keep going mode</span>
-          </div>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900 mb-1">Mock Interview</h1>
+          <p className="text-sm text-gray-500">
+            Answer real ML engineer interview questions. AI evaluates what you got right, what you missed, and surfaces follow-up probes.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 text-xs text-gray-500 pt-1">
+          <span className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            {totalLive} live modules
+          </span>
+          <span className="text-gray-300">·</span>
+          <span>{totalQuestions}+ questions</span>
         </div>
       </div>
 
-      {/* Categories */}
-      {CATEGORIES.map(cat => {
-        const c      = COLOR[cat.color as keyof typeof COLOR];
-        const CatIcon = cat.Icon;
-        return (
-          <section key={cat.id} className="space-y-4">
-            <div className="flex items-center gap-2.5">
-              <CatIcon className={`w-4 h-4 ${c.icon}`} />
-              <h2 className={`text-sm font-bold uppercase tracking-widest ${c.heading}`}>{cat.label}</h2>
-              <div className="flex-1 h-px bg-slate-800" />
+      <div className="space-y-8">
+        {AREAS.map(area => {
+          const { Icon } = area;
+          const areaLive = area.mods.filter(m => m.live).length;
+          return (
+            <div key={area.id}>
+              <div className="flex items-center gap-2 mb-2">
+                <Icon className={`w-3.5 h-3.5 ${area.color}`} />
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{area.label}</h2>
+                {areaLive > 0
+                  ? <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border bg-green-50 text-green-700 border-green-200">{areaLive} live</span>
+                  : <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border bg-gray-50 text-gray-400 border-gray-200">Coming soon</span>
+                }
+              </div>
+              <div className="border border-gray-200 rounded-md overflow-hidden">
+                {area.mods.map(mod => <ModRow key={mod.slug} mod={mod} />)}
+              </div>
             </div>
+          );
+        })}
+      </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {cat.modules.map(mod => mod.live ? (
-                <Link key={mod.slug} href={`/mock-interview/${mod.slug}`}>
-                  <div className={`group h-full bg-slate-900 border border-slate-800 rounded-xl p-5 cursor-pointer transition-all duration-200 ${c.card} hover:bg-slate-800/60`}>
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <h3 className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">
-                        {mod.title}
-                      </h3>
-                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold border ${c.badge}`}>
-                        Live
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400 leading-relaxed mb-4">{mod.description}</p>
-                    <div className="flex items-center gap-3 text-[10px] font-mono text-slate-500">
-                      <span>{mod.questions} questions</span>
-                      <span>·</span>
-                      <span>Shuffled</span>
-                      <span>·</span>
-                      <span>AI eval</span>
-                    </div>
-                  </div>
-                </Link>
-              ) : (
-                <div key={mod.slug} className="h-full bg-slate-900/40 border border-slate-800/60 rounded-xl p-5 opacity-50 cursor-not-allowed">
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <h3 className="text-sm font-medium text-slate-400">{mod.title}</h3>
-                    <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 border border-slate-700 text-slate-500">
-                      Soon
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 leading-relaxed">{mod.description}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        );
-      })}
     </div>
   );
 }
