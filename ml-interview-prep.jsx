@@ -47,13 +47,13 @@ Incumbent model (champion) vs. experimental model (challenger) run in parallel. 
         title: "Containerization & Scaling",
         content: `**Docker**: Package model + dependencies into an image. Base images: python:3.11-slim, nvidia/cuda for GPU.
 
-**Kubernetes**: Orchestrate containers. Key resources: Deployment (replicas), Service (load balancing), HPA (Horizontal Pod Autoscaler — scale on CPU/custom metrics), VPA (Vertical Pod Autoscaler — resize containers).
+**Kubernetes**: Orchestrate containers. Key resources: Deployment (replicas), Service (load balancing), HPA (Horizontal Pod Autoscaler - scale on CPU/custom metrics), VPA (Vertical Pod Autoscaler - resize containers).
 
 **GPU Serving**: Request GPU limits in K8s; use NVIDIA device plugin. Multi-instance GPU (MIG) for sharing a single GPU across pods.
 
-**Model Registries**: MLflow, Weights & Biases, SageMaker Model Registry — version control for models, store artifacts + metadata.
+**Model Registries**: MLflow, Weights & Biases, SageMaker Model Registry - version control for models, store artifacts + metadata.
 
-**Serverless**: AWS Lambda, Google Cloud Run — auto-scale to zero. Good for infrequent predictions; cold start latency is the tradeoff.`,
+**Serverless**: AWS Lambda, Google Cloud Run - auto-scale to zero. Good for infrequent predictions; cold start latency is the tradeoff.`,
       },
       {
         title: "Latency Optimization",
@@ -63,7 +63,7 @@ Incumbent model (champion) vs. experimental model (challenger) run in parallel. 
 
 **Knowledge Distillation**: Train a smaller "student" model to mimic a large "teacher." Student inherits soft labels (logits), not just hard labels.
 
-**Model Compilation**: TorchScript, ONNX, TensorRT, XLA — convert to optimized runtimes. TensorRT can give 3–5× speedup on NVIDIA GPUs.
+**Model Compilation**: TorchScript, ONNX, TensorRT, XLA - convert to optimized runtimes. TensorRT can give 3–5× speedup on NVIDIA GPUs.
 
 **Caching**: Cache predictions for frequent identical inputs. Use Redis/Memcached. Be careful: stale cache can mask model drift.
 
@@ -80,7 +80,7 @@ Incumbent model (champion) vs. experimental model (challenger) run in parallel. 
       {
         title: "The Four Layers of ML Metrics",
         content: `**1. Infrastructure Metrics** (always monitor)
-- Latency: p50, p95, p99 (not just mean — tail latency kills UX)
+- Latency: p50, p95, p99 (not just mean - tail latency kills UX)
 - Throughput: requests/sec, tokens/sec
 - CPU/GPU utilization, memory usage
 - Error rate: 4xx/5xx responses
@@ -107,7 +107,7 @@ Incumbent model (champion) vs. experimental model (challenger) run in parallel. 
 Input distribution P(X) changes. Model sees inputs unlike its training data. Detection: statistical tests on feature distributions over time windows.
 
 **Concept Drift**
-The relationship P(Y|X) changes. The world changes, making old patterns stale. Harder to detect — requires ground truth labels which arrive with delay.
+The relationship P(Y|X) changes. The world changes, making old patterns stale. Harder to detect - requires ground truth labels which arrive with delay.
 
 **Label Drift**
 The marginal distribution P(Y) changes (e.g., more fraud during holidays).
@@ -149,7 +149,7 @@ Monitoring output distribution as a proxy when labels are unavailable. If predic
 **Logging**
 - Log prediction inputs + outputs (with sampling for high-volume)
 - Critical for debugging and building evaluation datasets
-- Be careful with PII — anonymize/hash sensitive fields`,
+- Be careful with PII - anonymize/hash sensitive fields`,
       },
       {
         title: "Ground Truth & Feedback Loops",
@@ -195,7 +195,7 @@ Measure real-world business metrics. A/B tests, interleaving experiments (for ra
       },
       {
         title: "Feature Stores",
-        content: `**Problem they solve**: Same feature computed differently offline (training) vs. online (serving) causes training-serving skew — a major production bug.
+        content: `**Problem they solve**: Same feature computed differently offline (training) vs. online (serving) causes training-serving skew - a major production bug.
 
 **Architecture**
 - Offline Store: Historical features for training (data warehouse / Parquet files)
@@ -224,23 +224,23 @@ Measure real-world business metrics. A/B tests, interleaving experiments (for ra
 - Integration tests against staging environment
 - Canary deployment with automated rollback on metric degradation
 
-**CT — Continuous Training**
-Triggered retraining on drift detection, data freshness, or scheduled cadence. Different from software CI/CD — data and model artifacts need versioning too.
+**CT - Continuous Training**
+Triggered retraining on drift detection, data freshness, or scheduled cadence. Different from software CI/CD - data and model artifacts need versioning too.
 
 **Tools**: GitHub Actions + DVC (data versioning), MLflow + Airflow, Kubeflow, Vertex AI Pipelines, SageMaker Pipelines.
 
 **Model Versioning**
 - Version models with semantic versioning (v1.2.0)
 - Store model artifacts with metadata: training data hash, hyperparameters, eval metrics, training date
-- Never overwrite — always append new versions`,
+- Never overwrite - always append new versions`,
       },
       {
         title: "Data Management",
-        content: `**Data Versioning**: DVC (Data Version Control) — tracks dataset changes in Git, stores data in S3/GCS. Enables reproducibility.
+        content: `**Data Versioning**: DVC (Data Version Control) - tracks dataset changes in Git, stores data in S3/GCS. Enables reproducibility.
 
 **Data Lineage**: Track where data comes from, transformations applied, which models used it. Tools: Apache Atlas, DataHub, OpenLineage, Marquez.
 
-**Data Validation**: Great Expectations, TFX Data Validation — define expectations (column types, value ranges, no nulls) and run them in the pipeline.
+**Data Validation**: Great Expectations, TFX Data Validation - define expectations (column types, value ranges, no nulls) and run them in the pipeline.
 
 **Experiment Reproducibility**
 - Fix random seeds
@@ -301,7 +301,7 @@ Triggered retraining on drift detection, data freshness, or scheduled cadence. D
       {
         title: "Common System Design Problems",
         content: `**Recommendation System**
-Two-stage: Candidate Generation (fast retrieval, ANN search over embeddings — Faiss, ScaNN) → Ranking (precision model scores top-K candidates). Feature store for user/item embeddings. Offline: NDCG, online: CTR/engagement.
+Two-stage: Candidate Generation (fast retrieval, ANN search over embeddings - Faiss, ScaNN) → Ranking (precision model scores top-K candidates). Feature store for user/item embeddings. Offline: NDCG, online: CTR/engagement.
 
 **Real-Time Fraud Detection**
 Low latency is critical (<50ms). Feature engineering over event streams (Flink, Kafka). Rule engine + ML model hybrid. Heavily imbalanced (fraud is rare) → use AUC-PR, focal loss, oversampling. Shadow mode before live deploy.
@@ -352,7 +352,7 @@ Fraud detection: high recall (catch fraud) at cost of precision (false positives
 Online features (real-time user context) are powerful but expensive. Batch features (precomputed) are cheap but stale. Use both: base features batch-precomputed, last-N-actions online.
 
 **Build vs. Buy**
-Feature stores, monitoring tools, orchestrators — build only what gives competitive advantage. Buy/open-source commodity infrastructure.
+Feature stores, monitoring tools, orchestrators - build only what gives competitive advantage. Buy/open-source commodity infrastructure.
 
 **Explainability vs. Performance**
 Regulators often require explainability (SHAP, LIME, model cards). Deep models perform better but are black boxes. Gradient Boosted Trees give good perf + SHAP out of the box.`,
@@ -386,16 +386,16 @@ const MOCK_QUESTIONS = [
     question:
       "Your model's accuracy hasn't changed, but your business team is reporting that revenue from recommendations has dropped 15%. How do you diagnose this?",
     hints: [
-      "Accuracy is a proxy metric — what could diverge?",
+      "Accuracy is a proxy metric - what could diverge?",
       "Think about data drift, distribution shift",
       "Consider feedback loops",
     ],
     keyPoints: [
       "Accuracy on stale test set may not reflect current data distribution",
-      "Check input feature drift — did user behavior or product catalog change?",
-      "Check prediction distribution drift — are predictions shifting to different items?",
-      "Investigate population segments — is drop concentrated in specific user cohorts?",
-      "Check for feedback loops — model may have over-indexed on popular items",
+      "Check input feature drift - did user behavior or product catalog change?",
+      "Check prediction distribution drift - are predictions shifting to different items?",
+      "Investigate population segments - is drop concentrated in specific user cohorts?",
+      "Check for feedback loops - model may have over-indexed on popular items",
       "Look at business metric at a finer grain: different user segments, device types, time of day",
     ],
   },
@@ -406,7 +406,7 @@ const MOCK_QUESTIONS = [
       "What metrics would you monitor for an LLM-powered customer support chatbot in production? How would you detect if it's degrading?",
     hints: [
       "Think infra, model quality, and business layers",
-      "Ground truth is hard to get — what proxies can you use?",
+      "Ground truth is hard to get - what proxies can you use?",
       "LLM-specific concerns: hallucination, latency, cost",
     ],
     keyPoints: [
@@ -433,7 +433,7 @@ const MOCK_QUESTIONS = [
       "Causes: separate code paths, different data sources, feature staleness, preprocessing bugs",
       "Example: training uses raw data normalized one way; serving normalizes differently",
       "Prevention: single feature computation path used for both training and serving",
-      "Feature stores solve this — define feature once, retrieve for both training and serving",
+      "Feature stores solve this - define feature once, retrieve for both training and serving",
       "Detection: log serving features, compare distribution vs. training data periodically",
       "Add automated skew detection to CI/CD pipeline",
     ],
@@ -449,11 +449,11 @@ const MOCK_QUESTIONS = [
       "Cost vs. benefit of retraining frequency",
     ],
     keyPoints: [
-      "Scheduled: time-based retraining (daily, weekly) — simple but may retrain unnecessarily",
+      "Scheduled: time-based retraining (daily, weekly) - simple but may retrain unnecessarily",
       "Drift-triggered: retrain when PSI or KS test exceeds threshold on input features",
       "Performance-triggered: retrain when online model metrics degrade below threshold",
       "Data volume-triggered: retrain when N new labeled samples are available",
-      "Consider: retraining is expensive — need gates (automated eval) before promotion",
+      "Consider: retraining is expensive - need gates (automated eval) before promotion",
       "Continual learning for fast-changing domains vs. periodic retraining for stable domains",
     ],
   },
@@ -490,7 +490,7 @@ const MOCK_QUESTIONS = [
     ],
     keyPoints: [
       "Test set distribution doesn't match current production distribution (temporal split matters)",
-      "Data leakage in training — model learned shortcut features not available in serving",
+      "Data leakage in training - model learned shortcut features not available in serving",
       "Feedback loop: offline eval doesn't capture that model predictions change user behavior",
       "Population mismatch: A/B test users differ from training data users (new users, new markets)",
       "Metric mismatch: accuracy measures what you train for, A/B measures business outcome",
@@ -505,13 +505,13 @@ const MOCK_QUESTIONS = [
       "How would you design the ML infrastructure for a startup going from 0 to production ML in 3 months?",
     hints: [
       "Think about what to build vs. buy",
-      "Start simple — what's the minimum viable MLOps stack?",
+      "Start simple - what's the minimum viable MLOps stack?",
       "Prioritize by value delivered",
     ],
     keyPoints: [
-      "Month 1: Get a model to production fast — managed services (SageMaker, Vertex AI), minimal custom infra",
-      "Experiment tracking from day one: MLflow or W&B — cheap insurance for reproducibility",
-      "Data versioning: DVC or cloud bucket versioning — prevents 'which data did we train on?' disasters",
+      "Month 1: Get a model to production fast - managed services (SageMaker, Vertex AI), minimal custom infra",
+      "Experiment tracking from day one: MLflow or W&B - cheap insurance for reproducibility",
+      "Data versioning: DVC or cloud bucket versioning - prevents 'which data did we train on?' disasters",
       "Simple serving: FastAPI + Docker + managed container service (Cloud Run, ECS)",
       "Month 2: Add monitoring (Evidently or Datadog), automated retraining trigger, model registry",
       "Month 3: Feature store if features are reused across models; CI/CD for model deployment",
