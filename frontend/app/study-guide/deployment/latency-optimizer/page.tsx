@@ -9,7 +9,7 @@ export default function LatencyOptimizerStudyGuide() {
       studyContent={STUDY_CONTENT}
       moduleTitle="Latency Optimizer"
       moduleCategory="Deployment"
-      moduleDesc="P99 tail latency, quantization, dynamic batching, TensorRT, caching strategies, GPU vs CPU serving, and SLA design."
+      moduleDesc="Understand why P99 latency matters more than mean, and learn how to systematically reduce it through quantization, TensorRT, dynamic batching, and caching - with a framework for deciding which optimization to apply first."
       accentColor="orange"
     />
   );

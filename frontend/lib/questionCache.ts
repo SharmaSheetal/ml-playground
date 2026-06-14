@@ -1,4 +1,4 @@
-// Client-side question pool cache — stores AI-generated questions in localStorage.
+// Client-side question pool cache - stores AI-generated questions in localStorage.
 // Avoids hitting the LLM on every click: generates 3 at once, pops randomly until
 // pool is empty, then refills. Separate pools per section+type (quiz / practice).
 
@@ -42,7 +42,7 @@ export function pushQuestions(key: string, questions: string[]): void {
   save({ ...store, [key]: { available: existing.concat(fresh) } });
 }
 
-/** True when the pool is at or below REFILL_AT — caller should trigger a background refill. */
+/** True when the pool is at or below REFILL_AT - caller should trigger a background refill. */
 export function needsRefill(key: string): boolean {
   return (load()[key]?.available.length ?? 0) <= REFILL_AT;
 }
@@ -74,8 +74,8 @@ export function parseQuestionBatch(raw: string): string[] {
 /** Prompt that asks for BATCH_SIZE questions at once. */
 export function buildBatchPrompt(heading: string, body: string, type: 'quiz' | 'practice'): string {
   const focus = type === 'practice'
-    ? 'Each should test a DIFFERENT aspect — trade-offs, failure modes, edge cases, production implications, or common mistakes. These will be answered and evaluated.'
-    : 'Each should test a DIFFERENT angle — one on trade-offs, one on edge cases, one on production implications. These are just for reflection.';
+    ? 'Each should test a DIFFERENT aspect - trade-offs, failure modes, edge cases, production implications, or common mistakes. These will be answered and evaluated.'
+    : 'Each should test a DIFFERENT angle - one on trade-offs, one on edge cases, one on production implications. These are just for reflection.';
 
   return `You are a senior ML engineer.
 

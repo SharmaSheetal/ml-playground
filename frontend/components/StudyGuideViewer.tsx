@@ -13,7 +13,7 @@ import {
 } from '@/lib/questionCache';
 import type { StudySection } from '@/modules/deployment/traffic-split/content';
 
-// ── Accent color lookup (literal strings — required for Tailwind purge) ───────
+// ── Accent color lookup (literal strings - required for Tailwind purge) ───────
 const ACCENT: Record<string, { activeBg: string; bar: string; numOn: string; numOff: string }> = {
   blue:   { activeBg: 'bg-blue-50',   bar: 'bg-blue-500',   numOn: 'bg-blue-100 text-blue-700',   numOff: 'bg-gray-100 text-gray-400' },
   amber:  { activeBg: 'bg-amber-50',  bar: 'bg-amber-500',  numOn: 'bg-amber-100 text-amber-700',  numOff: 'bg-gray-100 text-gray-400' },
@@ -62,7 +62,7 @@ type ChatMsg =
 function parsePracticeFeedback(raw: string): ParsedFeedback {
   const get = (label: string) => {
     const re = new RegExp(`${label}:[\\s]*([\\s\\S]*?)(?=\\n[A-Z -]+:|$)`, 'i');
-    return raw.match(re)?.[1]?.trim() ?? '—';
+    return raw.match(re)?.[1]?.trim() ?? '-';
   };
   return {
     gotRight: get('GOT RIGHT'),
@@ -83,18 +83,18 @@ Question asked: "${question}"
 
 Candidate's answer: "${answer}"
 
-Evaluate using this exact format — be specific, reference their actual words:
+Evaluate using this exact format - be specific, reference their actual words:
 
 GOT RIGHT:
-[bullet points of what they covered correctly, or "— Nothing substantial" if weak]
+[bullet points of what they covered correctly, or "- Nothing substantial" if weak]
 
 MISSED:
-[bullet points of key gaps vs. the reference material, or "— Nothing major" if complete]
+[bullet points of key gaps vs. the reference material, or "- Nothing major" if complete]
 
 FOLLOW-UP:
 [one sharp follow-up question to probe deeper]
 
-SIGNAL: [Strong pass / Borderline / Would not pass] — [one sentence why]`;
+SIGNAL: [Strong pass / Borderline / Would not pass] - [one sentence why]`;
 }
 
 function buildPracticeEvalFallback(section: StudySection, answer: string): string {
@@ -105,13 +105,13 @@ function buildPracticeEvalFallback(section: StudySection, answer: string): strin
   const hits = bodyWords.filter(w => lower.includes(w));
   const coverage = hits.length / Math.max(bodyWords.length, 1);
   if (coverage > 0.25) {
-    return `GOT RIGHT:\n— Touched on key concepts from "${section.heading}"\n— Showed awareness of the core idea\n\nMISSED:\n— Production implications and specific failure modes\n— Concrete numbers or thresholds\n\nFOLLOW-UP:\nWhat would you monitor in production to detect if this breaks?\n\nSIGNAL: Borderline — Good foundation but needs more specificity on trade-offs`;
+    return `GOT RIGHT:\n- Touched on key concepts from "${section.heading}"\n- Showed awareness of the core idea\n\nMISSED:\n- Production implications and specific failure modes\n- Concrete numbers or thresholds\n\nFOLLOW-UP:\nWhat would you monitor in production to detect if this breaks?\n\nSIGNAL: Borderline - Good foundation but needs more specificity on trade-offs`;
   }
-  return `GOT RIGHT:\n— Attempted to address the question\n\nMISSED:\n— More specificity on "${section.heading}" concepts\n— Trade-offs, failure modes, and production implications\n\nFOLLOW-UP:\nCan you walk me through a specific scenario where this matters in production?\n\nSIGNAL: Would not pass — Needs more depth on core concepts`;
+  return `GOT RIGHT:\n- Attempted to address the question\n\nMISSED:\n- More specificity on "${section.heading}" concepts\n- Trade-offs, failure modes, and production implications\n\nFOLLOW-UP:\nCan you walk me through a specific scenario where this matters in production?\n\nSIGNAL: Would not pass - Needs more depth on core concepts`;
 }
 
 function buildSectionFallback(heading: string): string {
-  return `That's a good question about ${heading}. The key trade-off here is between risk and validation signal — moving faster means less data at each stage, while moving slower gives more confidence before increasing exposure.`;
+  return `That's a good question about ${heading}. The key trade-off here is between risk and validation signal - moving faster means less data at each stage, while moving slower gives more confidence before increasing exposure.`;
 }
 
 function signalColor(sig: string) {
@@ -497,7 +497,7 @@ function AskAIChat({ studyContent }: { studyContent: StudySection[] }) {
       .filter((m): m is Extract<ChatMsg, { role: 'user' | 'ai' }> => m.role === 'user' || m.role === 'ai')
       .map(m => `${m.role === 'user' ? 'Student' : 'Tutor'}: ${m.text}`)
       .join('\n');
-    return `You are an expert ML engineer helping a student. Use the module content below as your primary reference. Be concise and practical — focus on production implications.\n\nMODULE CONTENT:\n${moduleContext}\n\n${prior ? `CONVERSATION SO FAR:\n${prior}\n` : ''}Student: ${question}\nTutor:`;
+    return `You are an expert ML engineer helping a student. Use the module content below as your primary reference. Be concise and practical - focus on production implications.\n\nMODULE CONTENT:\n${moduleContext}\n\n${prior ? `CONVERSATION SO FAR:\n${prior}\n` : ''}Student: ${question}\nTutor:`;
   }
 
   async function handleSend() {
@@ -527,7 +527,7 @@ function AskAIChat({ studyContent }: { studyContent: StudySection[] }) {
           </div>
           <div className="text-left">
             <p className="text-sm font-medium text-gray-900">Ask AI about this module</p>
-            <p className="text-xs text-gray-500 mt-0.5">Covers all sections — trade-offs, edge cases, production context</p>
+            <p className="text-xs text-gray-500 mt-0.5">Covers all sections - trade-offs, edge cases, production context</p>
           </div>
         </div>
         <span className="text-gray-400 text-xs">{open ? '▲' : '▼'}</span>
@@ -545,7 +545,7 @@ function AskAIChat({ studyContent }: { studyContent: StudySection[] }) {
             <div className="px-4 py-4 space-y-3 max-h-80 overflow-y-auto bg-white">
               {messages.length === 0 && (
                 <p className="text-xs text-gray-400 text-center py-4">
-                  Ask anything about this module — concepts, trade-offs, examples…
+                  Ask anything about this module - concepts, trade-offs, examples…
                 </p>
               )}
               <AnimatePresence initial={false}>
@@ -732,7 +732,7 @@ export function StudyGuideViewer({
             </h1>
           </div>
 
-          {/* Section content + tools — key resets state on navigation */}
+          {/* Section content + tools - key resets state on navigation */}
           <SectionContent key={section.heading} section={section} />
 
           {/* Prev / Next navigation */}

@@ -7,7 +7,7 @@ export default function StudyGuide() {
       studyContent={STUDY_CONTENT}
       moduleTitle="Skew Detection"
       moduleCategory="MLOps"
-      moduleDesc="Detect and eliminate training-serving skew in ML pipelines."
+      moduleDesc="Understand why models trained on clean data degrade silently in production, and learn to diagnose whether the root cause is preprocessing differences, feature computation bugs, or serving pipeline drift."
       accentColor="indigo"
     />
   );

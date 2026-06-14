@@ -9,7 +9,7 @@ export default function TrafficSplitStudyGuide() {
       studyContent={STUDY_CONTENT}
       moduleTitle="Traffic Split"
       moduleCategory="Deployment"
-      moduleDesc="Canary deployments, blue/green, shadow mode, rollback mechanics, and serving patterns."
+      moduleDesc="Learn how to route production traffic safely across model versions, define rollback criteria that trigger automatically, and evaluate challenger models against a live champion before full promotion."
       accentColor="blue"
     />
   );

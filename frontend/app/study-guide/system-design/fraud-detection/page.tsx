@@ -7,7 +7,7 @@ export default function StudyGuide() {
       studyContent={STUDY_CONTENT}
       moduleTitle="Fraud Detection"
       moduleCategory="System Design"
-      moduleDesc="Build fraud detection systems with cost-aware threshold optimization."
+      moduleDesc="Learn how to design fraud ML systems where the cost of a missed fraud vastly outweighs a false decline - covering threshold selection via cost matrices, class imbalance handling, reject inference, and real-time scoring constraints."
       accentColor="orange"
     />
   );

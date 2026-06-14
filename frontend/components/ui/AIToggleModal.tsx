@@ -39,7 +39,7 @@ export function AIToggle() {
             <p className="text-gray-900 font-semibold text-sm mb-0.5">AI Mode</p>
             <p className="text-gray-500 text-xs mb-3 leading-relaxed">
               Enter your Groq API key for AI-generated explanations.
-              Stored in localStorage only — never sent to our servers.
+              Stored in localStorage only - never sent to our servers.
             </p>
             <input
               type="password"

@@ -78,18 +78,18 @@ ${hasPts
 
 Candidate's answer: "${answer}"
 
-Respond in this exact format — be specific, reference their actual words:
+Respond in this exact format - be specific, reference their actual words:
 
 GOT RIGHT:
-[bullet points of what they covered, or "— Nothing substantial" if weak]
+[bullet points of what they covered, or "- Nothing substantial" if weak]
 
 MISSED:
-[bullet points of key gaps, or "— Nothing major" if complete]
+[bullet points of key gaps, or "- Nothing major" if complete]
 
 FOLLOW-UP:
 [one sharp follow-up question]
 
-SIGNAL: [Strong pass / Borderline / Would not pass] — [one sentence why]`;
+SIGNAL: [Strong pass / Borderline / Would not pass] - [one sentence why]`;
 }
 
 function buildFallback(q: InterviewQ | DynamicQ, answer: string): string {
@@ -97,7 +97,7 @@ function buildFallback(q: InterviewQ | DynamicQ, answer: string): string {
     const words     = answer.toLowerCase().split(/\W+/).filter(w => w.length > 5);
     const technical = ['canary','traffic','latency','p99','rollback','deploy','model','inference','serving','monitor','gate','psi','drift'].filter(t => words.includes(t));
     const signal    = technical.length >= 4 ? 'Strong pass' : technical.length >= 2 ? 'Borderline' : 'Would not pass';
-    return `GOT RIGHT:\n• Addressed the question with relevant concepts\n\nMISSED:\n• Specific production numbers and failure mode details\n\nFOLLOW-UP:\nHow would you validate this decision in a real production rollout?\n\nSIGNAL: ${signal} — Based on technical depth detected.`;
+    return `GOT RIGHT:\n• Addressed the question with relevant concepts\n\nMISSED:\n• Specific production numbers and failure mode details\n\nFOLLOW-UP:\nHow would you validate this decision in a real production rollout?\n\nSIGNAL: ${signal} - Based on technical depth detected.`;
   }
   const lower  = answer.toLowerCase();
   const hits   = q.keyPoints.filter(kp => kp.toLowerCase().split(/\s+/).some(w => w.length > 5 && lower.includes(w)));
@@ -105,10 +105,10 @@ function buildFallback(q: InterviewQ | DynamicQ, answer: string): string {
   const ratio  = hits.length / Math.max(q.keyPoints.length, 1);
   const signal = ratio >= 0.7 ? 'Strong pass' : ratio >= 0.4 ? 'Borderline' : 'Would not pass';
   return [
-    `GOT RIGHT:\n${hits.length ? hits.map(h => `• ${h}`).join('\n') : '• — Nothing substantial detected'}`,
-    `MISSED:\n${misses.length ? misses.map(m => `• ${m}`).join('\n') : '• — Nothing major'}`,
+    `GOT RIGHT:\n${hits.length ? hits.map(h => `• ${h}`).join('\n') : '• - Nothing substantial detected'}`,
+    `MISSED:\n${misses.length ? misses.map(m => `• ${m}`).join('\n') : '• - Nothing major'}`,
     (q as InterviewQ).trap ? `FOLLOW-UP:\n${(q as InterviewQ).trap}` : 'FOLLOW-UP:\nCan you walk me through a real example from your experience?',
-    `SIGNAL: ${signal} — Based on keyword coverage of key points.`,
+    `SIGNAL: ${signal} - Based on keyword coverage of key points.`,
   ].join('\n\n');
 }
 
@@ -276,7 +276,7 @@ function CompletionModal({ total, signals, onFresh, onContinue, onShowPDF }: {
         </h2>
         <p className="text-center text-xs text-gray-500 mb-5">
           {allStrong
-            ? `All ${answered} questions — Strong pass`
+            ? `All ${answered} questions - Strong pass`
             : `You covered all ${total} topics in this round`}
         </p>
 
@@ -376,11 +376,11 @@ export function MockInterviewRunner({
     setShowModel(false);
 
     const coveredTopics = studyContent.map(s => s.heading).join(', ');
-    const prompt = `You are a senior ML engineer conducting an extended technical interview on ${moduleCategory} — ${moduleTitle}.
+    const prompt = `You are a senior ML engineer conducting an extended technical interview on ${moduleCategory} - ${moduleTitle}.
 
 The candidate has already answered questions covering: ${coveredTopics}.
 
-Generate ONE new advanced question that probes an aspect not yet covered — focus on system design trade-offs, cross-cutting concerns, debugging production incidents, or nuanced edge cases specific to ${moduleTitle}.
+Generate ONE new advanced question that probes an aspect not yet covered - focus on system design trade-offs, cross-cutting concerns, debugging production incidents, or nuanced edge cases specific to ${moduleTitle}.
 
 Return only the question. No preamble.`;
 

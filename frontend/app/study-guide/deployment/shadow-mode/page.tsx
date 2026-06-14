@@ -9,7 +9,7 @@ export default function ShadowModeStudyGuide() {
       studyContent={STUDY_CONTENT}
       moduleTitle="Shadow Mode"
       moduleCategory="Deployment"
-      moduleDesc="Request mirroring, divergence metrics, Istio/Envoy implementation, stateful model constraints, and comparison pipelines."
+      moduleDesc="Learn how to run a new model in parallel with live traffic, measure prediction divergence without user impact, and handle the challenges of stateful models and async logging that make shadow mode hard in practice."
       accentColor="cyan"
     />
   );

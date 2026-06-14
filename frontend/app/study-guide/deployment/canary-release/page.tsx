@@ -9,7 +9,7 @@ export default function CanaryReleaseStudyGuide() {
       studyContent={STUDY_CONTENT}
       moduleTitle="Canary Release"
       moduleCategory="Deployment"
-      moduleDesc="Staged traffic promotion, observation windows, automated gates, PSI monitoring, and rollback strategy."
+      moduleDesc="Understand how staged rollouts catch regressions before they reach all users - from configuring automated PSI gates and observation windows to wiring Argo Rollouts for zero-touch promotion or instant rollback."
       accentColor="amber"
     />
   );
