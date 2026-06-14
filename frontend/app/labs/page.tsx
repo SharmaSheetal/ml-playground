@@ -33,7 +33,7 @@ interface Sim {
   Icon:      React.ElementType;
   level:     string;
   tags:      string[];
-  modes?:    string[];   // injectable fault/config modes — only on live sims
+  modes?:    string[];   // injectable fault/config modes - only on live sims
   duration?: string;
   gates?:    number;
 }
@@ -66,7 +66,7 @@ const AREAS: Area[] = [
       },
       {
         slug: 'latency-optimizer', title: 'Latency Optimizer', level: 'Advanced',
-        desc: 'Quantization, TensorRT, batching, caching — observe P50/P99 impact',
+        desc: 'Quantization, TensorRT, batching, caching - observe P50/P99 impact',
         Icon: Zap, tags: ['TensorRT', 'INT8', 'P99'],
         modes: ['fp16', 'int8', 'tensorrt', 'cache', 'async'], duration: '~40 min', gates: 5,
       },
