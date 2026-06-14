@@ -82,14 +82,14 @@ export async function ask(
     try {
       return { text: await userProvider.ask(prompt), source: "user-key" };
     } catch {
-      onWarn?.("Your API key failed — falling back to server key.");
+      onWarn?.("Your API key failed - falling back to server key.");
     }
   }
 
   try {
     return { text: await _backendProvider.ask(prompt), source: "server-key" };
   } catch {
-    onWarn?.("AI unavailable — showing static content.");
+    onWarn?.("AI unavailable - showing static content.");
     return { text: staticFallback, source: "static" };
   }
 }

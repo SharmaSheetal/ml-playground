@@ -7,7 +7,7 @@ wheels/
 *.egg-info
 .venv
 
-# Env files — never commit real values
+# Env files - never commit real values
 .env
 .env.local
 .env.*.local
@@ -19,3 +19,9 @@ frontend/node_modules/
 
 # Docker
 docker-compose.override.yml
+frontend/tsconfig.tsbuildinfo
+
+docs/
+.DS_Store
+package-lock.json
+MLOps Playground.pdf
