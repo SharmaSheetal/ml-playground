@@ -47,7 +47,7 @@ export function useSimulation() {
     const totalMem = Math.round(memPerInstance * instanceCount);
     const costPerHour = Math.round(instanceCount * (gpuEnabled ? 3.2 : 0.6) * 100) / 100;
     const scalingStatus = load > 1.1 ? 'overloaded' : load > 0.85 ? 'degraded' : 'healthy';
-    const bottleneck = load > 1 ? 'Insufficient capacity — scale out' : gpuUtil > 85 ? 'GPU bound — reduce batch or add instances' : totalMem > 32000 ? 'Memory bound — upgrade instance type' : 'None';
+    const bottleneck = load > 1 ? 'Insufficient capacity - scale out' : gpuUtil > 85 ? 'GPU bound - reduce batch or add instances' : totalMem > 32000 ? 'Memory bound - upgrade instance type' : 'None';
     return { latencyP50, latencyP95, throughput: totalThroughput, gpuUtilization: gpuUtil, memoryUsageMB: totalMem, costPerHour, scalingStatus, bottleneck };
   }, [state]);
 

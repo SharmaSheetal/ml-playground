@@ -24,7 +24,7 @@ export function LatencyChart({ history, threshold }: LatencyChartProps) {
     <div className="bg-white border border-gray-200 rounded-xl p-4">
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs font-mono text-gray-500 uppercase tracking-widest">
-          P50 Latency — Live (ms)
+          P50 Latency - Live (ms)
         </p>
         <div className="flex items-center gap-3 text-xs font-mono text-gray-400">
           <span className="flex items-center gap-1.5">

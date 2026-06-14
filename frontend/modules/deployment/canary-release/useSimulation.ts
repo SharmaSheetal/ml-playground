@@ -104,7 +104,7 @@ export function useSimulation() {
           const failing = (Object.keys(gates) as (keyof Gates)[]).filter(k => gates[k] === 'fail');
           const prevIdx = Math.max(0, s.stageIdx - 1);
           newLogs.push(mkLog(
-            `AUTO-ROLLBACK — ${failing.join(', ')} gate failed. Rolling back to ${STAGES[prevIdx]}%.`,
+            `AUTO-ROLLBACK - ${failing.join(', ')} gate failed. Rolling back to ${STAGES[prevIdx]}%.`,
             'error'
           ));
           return {
@@ -119,7 +119,7 @@ export function useSimulation() {
         if (elapsed % 5 === 0) {
           if (allPass(gates)) {
             newLogs.push(mkLog(
-              `Gates passing — ${elapsed}s / ${s.minWindow}s window at ${STAGES[s.stageIdx]}%`,
+              `Gates passing - ${elapsed}s / ${s.minWindow}s window at ${STAGES[s.stageIdx]}%`,
               'success'
             ));
           } else {
@@ -170,7 +170,7 @@ export function useSimulation() {
         status: isComplete ? 'complete' : 'observing',
         log: [...prev.log, mkLog(
           isComplete
-            ? 'Deployed to 100% — canary is now the champion. Deployment complete.'
+            ? 'Deployed to 100% - canary is now the champion. Deployment complete.'
             : `Promoted to ${nextStage}% traffic. New ${MIN_WINDOW}s observation window started.`,
           'success'
         )],
@@ -187,7 +187,7 @@ export function useSimulation() {
         elapsed: 0,
         fault: 'none',
         status: prevIdx === 0 ? 'idle' : 'observing',
-        log: [...prev.log, mkLog(`Manual rollback — traffic returned to ${STAGES[prevIdx]}%.`, 'warn')],
+        log: [...prev.log, mkLog(`Manual rollback - traffic returned to ${STAGES[prevIdx]}%.`, 'warn')],
       };
     });
   }
@@ -195,9 +195,9 @@ export function useSimulation() {
   function injectFault(fault: FaultType) {
     const labels: Record<FaultType, string> = {
       none:    'cleared',
-      latency: 'Latency Spike — canary P99 spiking above threshold',
-      errors:  'Error Injection — canary error rate exceeding 1%',
-      drift:   'Feature Drift — PSI rising above 0.1',
+      latency: 'Latency Spike - canary P99 spiking above threshold',
+      errors:  'Error Injection - canary error rate exceeding 1%',
+      drift:   'Feature Drift - PSI rising above 0.1',
     };
     setState(prev => ({
       ...prev, fault,
@@ -210,7 +210,7 @@ export function useSimulation() {
       ...prev, autoRollback: !prev.autoRollback,
       log: [...prev.log, mkLog(
         !prev.autoRollback
-          ? 'Auto-rollback ON — gates will trigger rollback automatically on failure.'
+          ? 'Auto-rollback ON - gates will trigger rollback automatically on failure.'
           : 'Auto-rollback OFF.',
         'info'
       )],

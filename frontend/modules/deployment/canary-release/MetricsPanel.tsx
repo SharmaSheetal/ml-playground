@@ -90,7 +90,7 @@ export default function MetricsPanel({ champion, canary, gates, fault, status, s
           </span>
           <span className="flex items-center gap-1">
             <span className={`inline-block w-2 h-2 rounded-full ${isLive ? 'bg-amber-400 animate-pulse' : 'bg-gray-300'}`} />
-            Canary ({stageIdx > 0 ? `${[0,1,5,25,50,100][stageIdx]}%` : '—'})
+            Canary ({stageIdx > 0 ? `${[0,1,5,25,50,100][stageIdx]}%` : '-'})
           </span>
         </div>
       </div>

@@ -12,7 +12,7 @@ const STATUS_STYLES = {
 };
 
 const STATUS_ICON: Record<string, string> = {
-  pending: '—', running: '...', passed: 'pass', failed: 'fail', skipped: 'skip',
+  pending: '-', running: '...', passed: 'pass', failed: 'fail', skipped: 'skip',
 };
 
 export function CICDPipelineSimulator() {

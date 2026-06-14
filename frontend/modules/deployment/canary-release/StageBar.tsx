@@ -59,7 +59,7 @@ export default function StageBar({ stageIdx, status }: Props) {
                             : 'bg-gray-100 border-gray-200 text-gray-400',
                   ].join(' ')}
                 >
-                  {(isComplete && status !== 'observing') || status === 'complete' ? '✓' : STAGES[i] === 0 ? '—' : `${STAGES[i]}`}
+                  {(isComplete && status !== 'observing') || status === 'complete' ? '✓' : STAGES[i] === 0 ? '-' : `${STAGES[i]}`}
                 </div>
                 <span className={[
                   'absolute -bottom-5 text-[10px] font-medium whitespace-nowrap',

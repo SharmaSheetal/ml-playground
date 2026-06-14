@@ -85,7 +85,7 @@ export function useSimulation(config: SimConfig) {
 
       if (config.autoRollback && d2 && v2.p99 > config.autoRollbackThreshold) {
         setV1Traffic(100);
-        const msg = `Auto-rollback triggered — v2 P99 ${v2.p99}ms exceeded ${config.autoRollbackThreshold}ms threshold`;
+        const msg = `Auto-rollback triggered - v2 P99 ${v2.p99}ms exceeded ${config.autoRollbackThreshold}ms threshold`;
         setRollbackEvent(msg);
         setTimeout(() => setRollbackEvent(null), 5000);
       }

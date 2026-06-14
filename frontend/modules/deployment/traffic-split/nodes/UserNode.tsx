@@ -10,7 +10,7 @@ export function UserNode({ data }: { data: { rps: number } }) {
         {/* Soft glow backdrop */}
         <ellipse cx="70" cy="44" rx="62" ry="38" fill="#6366f1" fillOpacity="0.06" />
 
-        {/* Expanding pulse rings — radar style */}
+        {/* Expanding pulse rings - radar style */}
         {[0, 0.9, 1.8].map((delay, i) => (
           <motion.circle
             key={i}
@@ -22,7 +22,7 @@ export function UserNode({ data }: { data: { rps: number } }) {
           />
         ))}
 
-        {/* Browser window icon — the "traffic origin" */}
+        {/* Browser window icon - the "traffic origin" */}
         <rect x={46} y={28} width={48} height={34} rx={4}
           fill="#0f1729" stroke="#6366f1" strokeWidth={1.4} />
         {/* Title bar */}

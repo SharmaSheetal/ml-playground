@@ -30,15 +30,15 @@ function staticFallback(p: Props): string {
     return `You have quantization applied (${config.quantization}) but TensorRT is not enabled. Enabling TensorRT with ${config.quantization} will activate kernel fusion and hardware-specific optimizations, typically reducing P99 by an additional 25-30% on NVIDIA GPUs. Enable TensorRT next.`;
   }
   if (config.quantization === 'fp32' && !config.tensorrtEnabled) {
-    return `Baseline configuration: P99 ${metrics.p99.toFixed(0)}ms, ${metrics.throughput} RPS. Highest-impact next step: apply FP16 quantization — typically reduces P99 by ~47% on modern GPUs with negligible accuracy impact. This is the lowest-risk, highest-reward optimization.`;
+    return `Baseline configuration: P99 ${metrics.p99.toFixed(0)}ms, ${metrics.throughput} RPS. Highest-impact next step: apply FP16 quantization - typically reduces P99 by ~47% on modern GPUs with negligible accuracy impact. This is the lowest-risk, highest-reward optimization.`;
   }
   if (!config.cachingEnabled && config.batchSize > 8) {
-    return `You have high batch size (${config.batchSize}) which is increasing P99 latency for individual requests. Consider enabling prediction caching — at your traffic level, cache hit rate can reduce effective latency significantly without the queue wait cost of large batches.`;
+    return `You have high batch size (${config.batchSize}) which is increasing P99 latency for individual requests. Consider enabling prediction caching - at your traffic level, cache hit rate can reduce effective latency significantly without the queue wait cost of large batches.`;
   }
   if (config.cachingEnabled && config.cacheSize < 512) {
     return `Cache is enabled but cache size ${config.cacheSize}MB may be too small for meaningful hit rates. Increasing cache size to 1024-2048MB typically increases hit rate by 20-30%, reducing effective P99 substantially. Balance memory cost against latency savings.`;
   }
-  return `Current optimizations have reduced P99 by ${p99Reduction}% from baseline (${baseline.p99}ms → ${metrics.p99.toFixed(0)}ms). Throughput is ${metrics.throughput} RPS. Consider load testing under peak traffic patterns — bursty real-world traffic often reveals P99 spikes not captured in steady-state benchmarks.`;
+  return `Current optimizations have reduced P99 by ${p99Reduction}% from baseline (${baseline.p99}ms → ${metrics.p99.toFixed(0)}ms). Throughput is ${metrics.throughput} RPS. Consider load testing under peak traffic patterns - bursty real-world traffic often reveals P99 spikes not captured in steady-state benchmarks.`;
 }
 
 export function AIAdvisorPanel(props: Props) {

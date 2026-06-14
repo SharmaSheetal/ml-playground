@@ -90,27 +90,27 @@ export function Tooltip({ term, definition, children }: TooltipProps) {
 /* ── Pre-wired terms ── */
 export const JARGON: Record<string, { term: string; definition: string }> = {
   rps: {
-    term: 'RPS — Requests Per Second',
+    term: 'RPS - Requests Per Second',
     definition: 'The number of API calls your model receives each second. High RPS exposes latency regressions that are invisible at low load.',
   },
   p50: {
-    term: 'P50 — 50th Percentile',
+    term: 'P50 - 50th Percentile',
     definition: 'The median response time. Half of all requests complete faster than this. A good baseline, but hides tail latency.',
   },
   p95: {
-    term: 'P95 — 95th Percentile',
-    definition: '95% of requests complete within this time. Captures the experience of "typical slow" users — a useful middle ground.',
+    term: 'P95 - 95th Percentile',
+    definition: '95% of requests complete within this time. Captures the experience of "typical slow" users - a useful middle ground.',
   },
   p99: {
-    term: 'P99 — 99th Percentile',
-    definition: '99% of requests complete within this time. Captures tail latency — the worst 1 in 100 requests. SLOs are usually set here.',
+    term: 'P99 - 99th Percentile',
+    definition: '99% of requests complete within this time. Captures tail latency - the worst 1 in 100 requests. SLOs are usually set here.',
   },
   errorRate: {
     term: 'Error Rate',
     definition: 'Percentage of requests returning an error (5xx). Above 1% is usually a production incident; above 5% triggers emergency rollback.',
   },
   slo: {
-    term: 'SLO — Service Level Objective',
+    term: 'SLO - Service Level Objective',
     definition: 'A target for service performance (e.g. P99 < 300ms, error rate < 0.5%). Breaching an SLO triggers alerts and rollbacks.',
   },
   canary: {
@@ -127,14 +127,14 @@ export const JARGON: Record<string, { term: string; definition: string }> = {
   },
   blueGreen: {
     term: 'Blue/Green Deployment',
-    definition: 'Two identical environments run simultaneously. Traffic switches 100% instantly. Fast rollback, but no gradual validation — if the new version is broken, all users are affected.',
+    definition: 'Two identical environments run simultaneously. Traffic switches 100% instantly. Fast rollback, but no gradual validation - if the new version is broken, all users are affected.',
   },
   champChallenger: {
     term: 'Champion/Challenger',
     definition: 'A continuous pattern where the champion serves most traffic and a challenger is always being evaluated on a small slice. When the challenger wins, it becomes the new champion.',
   },
   psi: {
-    term: 'PSI — Population Stability Index',
+    term: 'PSI - Population Stability Index',
     definition: 'Measures how much the distribution of a feature has shifted between training and production. PSI > 0.2 signals significant drift that may degrade model performance.',
   },
   rollback: {
@@ -155,7 +155,7 @@ export const JARGON: Record<string, { term: string; definition: string }> = {
   },
   darkLaunch: {
     term: 'Dark Launch',
-    definition: 'Enabling new model behaviour for a small internal cohort (employees, beta users) before external traffic. Users see real responses — unlike shadow mode where only the champion response is ever shown.',
+    definition: 'Enabling new model behaviour for a small internal cohort (employees, beta users) before external traffic. Users see real responses - unlike shadow mode where only the champion response is ever shown.',
   },
   liveness: {
     term: 'Liveness Probe',
@@ -163,31 +163,31 @@ export const JARGON: Record<string, { term: string; definition: string }> = {
   },
   readiness: {
     term: 'Readiness Probe',
-    definition: 'Kubernetes probe that checks if a pod is ready to serve traffic. Failure removes it from the load balancer rotation. Critical for ML — prevents requests being routed to a pod still loading its model into GPU memory.',
+    definition: 'Kubernetes probe that checks if a pod is ready to serve traffic. Failure removes it from the load balancer rotation. Critical for ML - prevents requests being routed to a pod still loading its model into GPU memory.',
   },
   distributionShift: {
     term: 'Distribution Shift',
-    definition: 'Production traffic distribution P(X) differs from training distribution. The model learned correctly — the world changed. Detected via statistical tests (KS, PSI) on incoming features vs. training baseline.',
+    definition: 'Production traffic distribution P(X) differs from training distribution. The model learned correctly - the world changed. Detected via statistical tests (KS, PSI) on incoming features vs. training baseline.',
   },
   feedbackLoop: {
     term: 'Feedback Loop / Exposure Bias',
     definition: 'The model\'s own predictions change what data it sees next. Classic in recommendations: the model only surfaces items it scored highly, so it never gets training signal on items it ranked low.',
   },
   ptq: {
-    term: 'PTQ — Post-Training Quantization',
+    term: 'PTQ - Post-Training Quantization',
     definition: 'Quantize a model after training using a calibration dataset to compute scaling factors. Fast (hours, not days), no retraining. Typically costs 0.5–2% accuracy for INT8. Always try this before QAT.',
   },
   qat: {
-    term: 'QAT — Quantization-Aware Training',
-    definition: 'Simulate quantization noise during the training forward pass so the model learns to be robust to it. Recovers most accuracy lost by PTQ. Requires retraining — significantly more expensive.',
+    term: 'QAT - Quantization-Aware Training',
+    definition: 'Simulate quantization noise during the training forward pass so the model learns to be robust to it. Recovers most accuracy lost by PTQ. Requires retraining - significantly more expensive.',
   },
   distillation: {
     term: 'Knowledge Distillation',
     definition: 'Train a small student model to mimic a large teacher using soft probability labels, not just hard class labels. Soft labels transfer structural knowledge (e.g. cats and lynxes are similar) that hard labels discard.',
   },
   keda: {
-    term: 'KEDA — Kubernetes Event-Driven Autoscaler',
-    definition: 'Extends Kubernetes HPA to scale on custom metrics like queue depth, GPU utilization, or Kafka lag — instead of CPU. Essential for ML serving where CPU is a misleading autoscaling signal.',
+    term: 'KEDA - Kubernetes Event-Driven Autoscaler',
+    definition: 'Extends Kubernetes HPA to scale on custom metrics like queue depth, GPU utilization, or Kafka lag - instead of CPU. Essential for ML serving where CPU is a misleading autoscaling signal.',
   },
   speculativeDecoding: {
     term: 'Speculative Decoding',
@@ -203,6 +203,6 @@ export const JARGON: Record<string, { term: string; definition: string }> = {
   },
   openTelemetry: {
     term: 'OpenTelemetry',
-    definition: '2025 industry standard for unified observability — one SDK emits metrics, logs, and distributed traces to any backend. Vendor-agnostic. Use it to instrument ML serving paths end-to-end.',
+    definition: '2025 industry standard for unified observability - one SDK emits metrics, logs, and distributed traces to any backend. Vendor-agnostic. Use it to instrument ML serving paths end-to-end.',
   },
 };

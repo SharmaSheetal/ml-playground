@@ -39,7 +39,7 @@ export function ScalabilitySimulator() {
       <div className="flex items-center justify-between border border-gray-200 rounded-lg px-4 py-3 bg-white">
         <div>
           <div className="text-sm font-medium text-gray-700">{d.bottleneck}</div>
-          <div className="text-xs text-gray-400 mt-0.5">{sim.instanceCount} instance{sim.instanceCount !== 1 ? 's' : ''} — ${d.costPerHour}/hr</div>
+          <div className="text-xs text-gray-400 mt-0.5">{sim.instanceCount} instance{sim.instanceCount !== 1 ? 's' : ''} - ${d.costPerHour}/hr</div>
         </div>
         <span className={clsx('px-3 py-1.5 rounded-full text-sm font-medium border capitalize', STATUS_COLORS[d.scalingStatus])}>
           {d.scalingStatus}

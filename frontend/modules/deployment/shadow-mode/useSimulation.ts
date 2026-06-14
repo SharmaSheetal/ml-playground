@@ -127,7 +127,7 @@ export function useSimulation() {
         if (elapsed % 5 === 0) {
           if (allPass(gates)) {
             newLogs.push(mkLog(
-              `Gates passing — ${elapsed}s elapsed, exact match ${div.exactMatch.toFixed(1)}%, NDCG ${div.ndcg.toFixed(3)}`,
+              `Gates passing - ${elapsed}s elapsed, exact match ${div.exactMatch.toFixed(1)}%, NDCG ${div.ndcg.toFixed(3)}`,
               'success'
             ));
           } else {
@@ -159,7 +159,7 @@ export function useSimulation() {
       setState(prev => ({
         ...prev, champion, shadow, divergence: div, gates,
         elapsed: 0, fault: 'none', status: 'running',
-        log: [...prev.log, mkLog(`Shadow started — mirroring ${prev.mirrorPct}% of traffic. Observing divergence…`, 'info')],
+        log: [...prev.log, mkLog(`Shadow started - mirroring ${prev.mirrorPct}% of traffic. Observing divergence…`, 'info')],
       }));
     }).catch(console.error);
   }
@@ -181,9 +181,9 @@ export function useSimulation() {
   function injectFault(fault: FaultType) {
     const labels: Record<FaultType, string> = {
       none:       'cleared',
-      latency:    'Shadow Latency — shadow P99 exceeding 1.2× champion',
-      divergence: 'Prediction Divergence — exact match rate dropping below 80%',
-      errors:     'Shadow Errors — shadow error rate exceeding 2%',
+      latency:    'Shadow Latency - shadow P99 exceeding 1.2× champion',
+      divergence: 'Prediction Divergence - exact match rate dropping below 80%',
+      errors:     'Shadow Errors - shadow error rate exceeding 2%',
     };
     setState(prev => ({
       ...prev, fault,

@@ -102,7 +102,7 @@ export function ShadowModeSimulator() {
             className="flex items-center gap-3 px-4 py-3 rounded-lg border border-green-200 bg-green-50 text-green-700 text-xs font-mono"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-            Shadow gates passed — model promoted to canary queue at 1% traffic.
+            Shadow gates passed - model promoted to canary queue at 1% traffic.
           </motion.div>
         )}
         {status === 'abandoned' && (
@@ -111,7 +111,7 @@ export function ShadowModeSimulator() {
             className="flex items-center gap-3 px-4 py-3 rounded-lg border border-red-200 bg-red-50 text-red-700 text-xs font-mono"
           >
             <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
-            Shadow test abandoned — model requires investigation before any user exposure.
+            Shadow test abandoned - model requires investigation before any user exposure.
           </motion.div>
         )}
       </AnimatePresence>
@@ -173,7 +173,7 @@ export function ShadowModeSimulator() {
         {running && !canPromote && (
           <p className="text-[11px] text-gray-400 font-mono">
             {![ gates.latency, gates.errors, gates.divergence, gates.ndcg ].every(g => g === 'pass')
-              ? 'Gates failing — resolve issues before promotion.'
+              ? 'Gates failing - resolve issues before promotion.'
               : `Observation: ${elapsed}s elapsed (minimum 15s). ${Math.max(0, 15 - elapsed)}s remaining.`}
           </p>
         )}
@@ -203,7 +203,7 @@ export function ShadowModeSimulator() {
         </div>
       </div>
 
-      {/* Metrics — Champion vs Shadow */}
+      {/* Metrics - Champion vs Shadow */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Champion */}
@@ -214,8 +214,8 @@ export function ShadowModeSimulator() {
             <span className="ml-auto text-[10px] font-mono text-gray-400">{champion.rps} RPS</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <MetricCard label="P99 Latency" value={`${running ? champion.p99.toFixed(0) : '—'}ms`} />
-            <MetricCard label="Error Rate"  value={running ? `${champion.errorRate.toFixed(2)}%` : '—'} />
+            <MetricCard label="P99 Latency" value={`${running ? champion.p99.toFixed(0) : '-'}ms`} />
+            <MetricCard label="Error Rate"  value={running ? `${champion.errorRate.toFixed(2)}%` : '-'} />
           </div>
         </div>
 
@@ -227,8 +227,8 @@ export function ShadowModeSimulator() {
             <span className="ml-auto text-[10px] font-mono text-gray-400">{running ? shadow.rps : 0} RPS</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <MetricCard label="P99 Latency" value={`${running ? shadow.p99.toFixed(0) : '—'}ms`} accent={gates.latency === 'fail'} />
-            <MetricCard label="Error Rate"  value={running ? `${shadow.errorRate.toFixed(2)}%` : '—'} accent={gates.errors === 'fail'} />
+            <MetricCard label="P99 Latency" value={`${running ? shadow.p99.toFixed(0) : '-'}ms`} accent={gates.latency === 'fail'} />
+            <MetricCard label="Error Rate"  value={running ? `${shadow.errorRate.toFixed(2)}%` : '-'} accent={gates.errors === 'fail'} />
           </div>
         </div>
       </div>
@@ -237,9 +237,9 @@ export function ShadowModeSimulator() {
       <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
         <p className="text-xs font-mono font-semibold text-gray-500">Prediction Divergence</p>
         <div className="grid grid-cols-3 gap-3">
-          <MetricCard label="Exact Match Rate" value={running ? `${divergence.exactMatch.toFixed(1)}%` : '—'} sub="gate: ≥ 80%" accent={gates.divergence === 'fail'} />
-          <MetricCard label="Score Delta P95"  value={running ? divergence.deltaP95.toFixed(3) : '—'}     sub="gate: ≤ 0.10" />
-          <MetricCard label="NDCG Correlation" value={running ? divergence.ndcg.toFixed(3) : '—'}          sub="gate: ≥ 0.85" accent={gates.ndcg === 'fail'} />
+          <MetricCard label="Exact Match Rate" value={running ? `${divergence.exactMatch.toFixed(1)}%` : '-'} sub="gate: ≥ 80%" accent={gates.divergence === 'fail'} />
+          <MetricCard label="Score Delta P95"  value={running ? divergence.deltaP95.toFixed(3) : '-'}     sub="gate: ≤ 0.10" />
+          <MetricCard label="NDCG Correlation" value={running ? divergence.ndcg.toFixed(3) : '-'}          sub="gate: ≥ 0.85" accent={gates.ndcg === 'fail'} />
         </div>
       </div>
 
@@ -247,7 +247,7 @@ export function ShadowModeSimulator() {
       <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
         <p className="text-xs font-mono font-semibold text-gray-500">Shadow Gates</p>
         <div className="grid grid-cols-2 gap-2">
-          <GateBadge status={gates.latency}    label={`Shadow P99 ≤ 1.2× champion (${running ? champion.p99.toFixed(0) : '—'}ms)`} />
+          <GateBadge status={gates.latency}    label={`Shadow P99 ≤ 1.2× champion (${running ? champion.p99.toFixed(0) : '-'}ms)`} />
           <GateBadge status={gates.errors}     label="Shadow error rate < 2%" />
           <GateBadge status={gates.divergence} label="Exact match rate ≥ 80%" />
           <GateBadge status={gates.ndcg}       label="NDCG rank correlation ≥ 0.85" />

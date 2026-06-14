@@ -1,10 +1,4 @@
-export interface StudySection {
-  heading:  string;
-  body:     string;
-  keyTerms: string[];
-  quiz:     { q: string; a: string }[];
-  practice: string[];
-}
+export interface StudySection { heading: string; body: string; }
 
 export interface InterviewQ {
   difficulty: 'junior' | 'mid' | 'senior';
@@ -13,152 +7,135 @@ export interface InterviewQ {
   trap?:      string;
 }
 
-// ── Study Content ──────────────────────────────────────────────────────────────
-
 export const STUDY_CONTENT: StudySection[] = [
   {
     heading: 'What is Shadow Mode and Request Mirroring',
-    body: `Shadow mode (also called dark launch, mirroring, or shadowing) deploys a new model alongside the production model without returning its results to users. The infrastructure layer — a gateway, sidecar proxy, or load balancer — duplicates every incoming request: the original flows synchronously to the champion model, whose response is returned to the caller. A copy is dispatched asynchronously (fire-and-forget) to the shadow model, whose response is logged and discarded.\n\nThe critical design constraint is that mirroring must be fully out-of-band. The shadow path must never block, delay, or degrade the critical request path. When implemented correctly, asynchronous mirroring adds less than 2ms P99 latency overhead at the gateway. Shadow mode provides risk-free validation: the new model sees real production traffic at full fidelity — real users, real inputs, real timing — without ever affecting a single user's experience.`,
-    keyTerms: ['Request mirroring', 'Champion model', 'Shadow model', 'Asynchronous fire-and-forget', 'Dark launch', 'Out-of-band shadow path'],
-    quiz: [
-      { q: 'What happens to the shadow model\'s response in a correctly implemented shadow deployment?', a: 'It is logged for offline comparison and discarded — it is never returned to the user.' },
-      { q: 'What is the most critical design constraint for the shadow path?', a: 'It must be fully asynchronous and out-of-band — it must never block, delay, or degrade the primary request path.' },
-    ],
-    practice: [
-      'Draw the request flow for shadow mode: user → gateway → champion (sync, returns to user) + shadow (async, logged only).',
-      'Explain to a non-technical PM why shadow mode users "never know" the new model is running.',
-    ],
+    body: `Shadow mode (also called dark launch, mirroring, or shadowing) deploys a new model alongside the production model without returning its results to users. The infrastructure layer - a gateway, sidecar proxy, or load balancer - duplicates every incoming request: the original flows synchronously to the champion model, whose response is returned to the caller. A copy is dispatched asynchronously (fire-and-forget) to the shadow model, whose response is logged and discarded.
+
+The critical design constraint is that mirroring must be fully out-of-band. The shadow path must never block, delay, or degrade the primary request path. When implemented correctly using Istio or Envoy (not NGINX, which can block), asynchronous mirroring adds less than 2ms P99 latency overhead at the gateway. This is the property that makes shadow mode risk-free: you can run a completely broken new model in shadow mode without any user impact.
+
+Shadow mode provides a validation environment with real production traffic fidelity that no staging environment can replicate. Load tests use synthetic traffic patterns; shadow mode uses the real request distribution, including all the edge cases, bursts, unusual inputs, and temporal patterns that only appear in actual production. A model that passes all integration tests and load tests but fails on a specific category of production inputs will be caught in shadow mode before any user sees a bad prediction.
+
+The term "dark launch" emphasizes another important use case beyond model validation: you can test serving infrastructure changes in shadow mode. A new model serving framework (migrating from TorchServe to Triton), a new hardware configuration (moving from T4 to A100 GPUs), or a new container image with a dependency upgrade can all be validated in shadow mode against real production traffic before any traffic is shifted. In practice, shadow mode often catches infrastructure issues - not just model issues - that would be invisible in synthetic testing.`,
   },
   {
     heading: 'Shadow Mode vs. Canary vs. A/B Testing',
-    body: `These three strategies are not interchangeable — they answer different questions and expose users to different levels of risk.\n\nShadow mode: zero user impact, validates technical correctness and prediction similarity. Cannot measure business outcomes. Use when you need to validate a major model change (new architecture, different feature schema) with zero risk tolerance.\n\nCanary release: exposes 1–10% of real users to the new model's actual responses. Validates both technical quality and early business signals (error rate, latency). Cannot validate full business metric impact (CTR, conversion) at small traffic fractions. Use when shadow testing has already validated prediction quality.\n\nA/B testing: routes two user cohorts to different model versions for a statistically powered experiment. Measures true business impact. Requires large traffic and long duration for statistical significance. Use when you need to prove business value before full rollout.\n\nThe recommended sequence is shadow → canary → A/B test → full rollout. Shadow mode is not a replacement for canary; it is the step before it.`,
-    keyTerms: ['Shadow mode', 'Canary release', 'A/B testing', 'User impact', 'Business metric validation', 'Deployment sequence'],
-    quiz: [
-      { q: 'Which deployment strategy can validate business impact (CTR, conversion) — shadow, canary, or A/B test?', a: 'Only A/B testing (and to some extent canary at meaningful traffic percentages). Shadow mode and early canary stages cannot measure business outcomes because users never act on the shadow/canary predictions in the same statistically controlled way.' },
-      { q: 'In what order should these strategies be used for a major ML model upgrade?', a: 'Shadow → canary → A/B test → full rollout. Shadow validates technical correctness, canary validates at real user scale, A/B test proves business value.' },
-    ],
-    practice: [
-      'A team is replacing their fraud detection model with a new architecture. They have zero tolerance for false negative increase. Which deployment strategy should they use first and why?',
-      'Explain why high shadow mode exact-match rate alone is insufficient justification to skip canary.',
-    ],
+    body: `These three strategies answer different questions and expose users to different levels of risk. They are not alternatives to each other - they are sequential stages in a responsible deployment pipeline, each building on the validation from the previous stage.
+
+Shadow mode: zero user impact. The new model sees real production traffic and generates predictions, but users never receive those predictions. Shadow mode validates technical correctness (does the model serve without errors?) and prediction similarity (does the new model produce predictions similar to the champion?). It cannot measure any business outcome because business outcomes require users to act on predictions. Use shadow mode for the highest-risk changes: new model architectures, different feature schemas, serving infrastructure migrations.
+
+Canary release: 1–10% of real users receive the new model's actual predictions. Their responses - clicks, purchases, fraud flags, conversions - are observable business signals. Canary validates both technical quality and early business signals at real user scale. At 1M daily users, a 1% canary is 10,000 real users. Shadow mode first, then canary, ensures that the 1% of users exposed in canary are exposed to a model that has already been validated for technical correctness.
+
+A/B testing: two statistically defined user cohorts receive different model versions in a controlled experiment designed for causal inference. The control group (champion) and treatment group (challenger) are randomly assigned, equal in size, and measured over a statistically powered observation window. The result is a causal estimate of the model's business impact. A/B testing requires more traffic and more time than canary but provides the definitive answer to "does this model change improve business outcomes?" for high-stakes decisions.
+
+The recommended sequence is shadow → canary → A/B test → full rollout. Skipping shadow testing and going directly to canary saves days but risks exposing real users to infrastructure-level failures that shadow testing would have caught at zero user cost. Skipping A/B testing and promoting directly from canary is defensible for low-stakes models but inappropriate when the model drives significant revenue or user experience decisions.`,
   },
   {
-    heading: 'Implementing Traffic Mirroring — Istio, Envoy, NGINX, SageMaker',
-    body: `Four dominant implementation approaches:\n\nIstio (most common in Kubernetes ML serving): Configured via VirtualService with a mirror and mirrorPercentage field. The mirrorPercentage field controls what fraction of traffic is shadowed — you can shadow 100% initially then reduce. Istio appends -shadow to the Host/Authority header on mirrored requests. Critical limitation: Istio performs no response comparison — it discards shadow responses. You must build your own logging and comparison pipeline.\n\nEnvoy Proxy: Uses request_mirror_policies in route config. Same -shadow hostname suffix behavior. The runtime_fraction field controls sampling rate. Raw Envoy gives lower-level control but requires more configuration.\n\nNGINX: Uses the mirror directive. Known production pitfall: NGINX can delay the original request if the mirror backend is slow, violating the fire-and-forget requirement. Istio/Envoy handle this at the connection level and do not have this problem.\n\nAWS SageMaker: First-class shadow testing support. Routes a copy of live inference requests to a shadow variant within the same endpoint, provides a built-in comparison dashboard for latency and error rates, and lets you discard or log shadow responses. Productized in November 2022.`,
-    keyTerms: ['Istio VirtualService', 'mirrorPercentage', 'Envoy request_mirror_policies', 'NGINX mirror directive', 'SageMaker shadow testing', '-shadow hostname suffix'],
-    quiz: [
-      { q: 'What is the key pitfall of NGINX mirroring compared to Istio or Envoy mirroring?', a: 'NGINX can delay the original request if the mirror backend is slow, creating latency coupling between primary and shadow paths. Istio and Envoy handle mirroring at the connection level and are truly fire-and-forget.' },
-      { q: 'After configuring Istio traffic mirroring, where do shadow responses go?', a: 'They are discarded by Istio. You must build your own logging and comparison pipeline to capture and compare shadow responses.' },
-    ],
-    practice: [
-      'Write a conceptual Istio VirtualService configuration that mirrors 20% of traffic to a shadow model endpoint.',
-      'Explain what the -shadow suffix on Istio mirrored requests enables in your comparison pipeline.',
-    ],
+    heading: 'Implementing Traffic Mirroring - Istio, Envoy, NGINX, SageMaker',
+    body: `Four dominant implementation approaches exist, each with distinct operational characteristics and trade-offs.
+
+Istio VirtualService with mirror and mirrorPercentage fields is the most widely used approach in Kubernetes-based ML serving. Istio performs mirroring at the connection level (Envoy proxy layer), making it truly fire-and-forget: the shadow backend's latency or availability has zero impact on the primary request path. Istio appends "-shadow" to the Host/Authority header on mirrored requests, enabling the shadow endpoint to identify and log shadow traffic separately from primary traffic. The mirrorPercentage field allows partial mirroring (10% or 20% of traffic) without modifying the primary routing rules. Critical operational detail: Istio discards all shadow responses - it does not perform any comparison. The comparison infrastructure must be built separately.
+
+Envoy Proxy request_mirror_policies in route configuration provides similar behavior to Istio at a lower abstraction level. Useful for teams that run Envoy directly without the Istio service mesh layer. The runtime_fraction field controls sampling rate. Like Istio, Envoy mirroring is connection-level and truly asynchronous - the shadow path is independent of the primary path.
+
+NGINX mirror directive is simpler to configure but has a documented production failure mode: NGINX can block or delay the primary request if the mirror backend is slow, creating latency coupling between the two paths. This violates the fire-and-forget requirement for shadow testing. Teams that discover unexpected P99 latency increases after enabling NGINX mirroring are experiencing this coupling. The fix is switching to Istio or Envoy mirroring, which are designed for true connection-level independence.
+
+AWS SageMaker Shadow Testing is a first-class managed feature released in November 2022. It routes a copy of live inference requests to a shadow variant within the same SageMaker endpoint configuration, provides a built-in comparison dashboard for latency and error rate metrics, and handles the log collection and comparison plumbing automatically. For teams already running on SageMaker, this eliminates the need to build custom logging and comparison pipelines. The trade-off is that it only works within the SageMaker ecosystem - cross-cloud or self-managed clusters must use Istio or Envoy.`,
   },
   {
-    heading: 'Divergence Metrics — Exact Match, NDCG, Prediction Delta',
-    body: `Istio, Envoy, and NGINX discard shadow responses by default. To compare outputs, you must log both champion and shadow responses with a shared correlation ID (injected at the gateway) and run comparison offline or in a streaming pipeline.\n\nKey divergence metrics:\n\nExact match rate: The percentage of requests where champion and shadow produce identical predictions. Used for classification models. Low exact match is not always a problem — it depends on whether disagreements are systematic or isolated to edge cases.\n\nPrediction delta distribution: For regression models, the distribution of |shadow_score - champion_score|. Alert thresholds are typically set at P95 and P99 of this distribution. A shift in the mean indicates systematic bias; a widening of the distribution indicates increased variance.\n\nRank correlation (NDCG, Spearman's rho): For ranking and recommendation models. NDCG@K measures whether the shadow model produces a similar ordering of items at the top K positions, with position-weighted discount for top-rank disagreements.\n\nKL divergence / Jensen-Shannon divergence: For probabilistic outputs. Detects distribution shift in model output across a population.\n\nCritical insight: high exact match rate does not mean models are equivalent. Two models can have 98% exact match but systematically disagree on your highest-value users or highest-stakes edge cases. Segment-level analysis is essential.`,
-    keyTerms: ['Exact match rate', 'Prediction delta P95', 'NDCG rank correlation', 'KL divergence', 'Correlation ID', 'Segment-level analysis'],
-    quiz: [
-      { q: 'Your champion and shadow models have 97% exact match rate. Can you safely promote the shadow model?', a: 'Not necessarily. 97% exact match means the models disagree on 3% of predictions. If those disagreements are concentrated on your highest-value users or most fraud-sensitive transactions, it could be a critical problem. You need segment-level analysis, not just aggregate match rate.' },
-      { q: 'What metric would you use to compare a recommendation model\'s shadow vs champion outputs?', a: 'NDCG (Normalized Discounted Cumulative Gain) at K — it measures ranking quality at the top positions with position-weighted discounts, capturing whether top recommendations agree.' },
-    ],
-    practice: [
-      'Design a comparison pipeline for a fraud scoring model: what metrics would you compute, at what granularity, and what thresholds would trigger an alert?',
-      'Explain the purpose of injecting a correlation ID at the gateway layer.',
-    ],
+    heading: 'Divergence Metrics - Exact Match, NDCG, Prediction Delta',
+    body: `Istio, Envoy, and SageMaker all discard or log shadow responses but do not compare them to champion responses automatically. Building the comparison pipeline - collecting both responses, joining them on a shared correlation ID, and computing divergence metrics - is the team's responsibility. The divergence metrics chosen must match the model's output type and the deployment's risk profile.
+
+Exact match rate measures the percentage of requests where champion and shadow produce identical discrete predictions. For binary classification (fraud/not-fraud, click/no-click), exact match rate is the primary signal. A 97% exact match rate means the models disagree on 3% of predictions. At a service handling 1M daily fraud decisions, 3% disagreement is 30,000 predictions per day where the models differ - and the distribution of those disagreements matters more than their count. Disagreements concentrated on high-value transactions are far more concerning than disagreements uniformly distributed across transaction volumes.
+
+Prediction delta distribution applies to regression and probabilistic output models. For each request, compute |shadow_score - champion_score|. Analyze the full distribution: mean delta (systematic bias), standard deviation (variance), and tail percentiles (P95, P99). A model with low mean delta but high P99 delta is producing similar average scores but occasional extreme disagreements. Alert thresholds should be set at P95 and P99 of the delta distribution, not the mean. The mean can look fine while the tail behavior is severely anomalous.
+
+Rank correlation (NDCG, Spearman's rho, Kendall's tau) applies to ranking and recommendation models. NDCG@K measures whether the shadow model produces a similar ordering of the top K items, with position-weighted discounts that assign more importance to top-rank disagreements than lower-rank disagreements. A shadow recommendation model that agrees on the top-1 position but disagrees on positions 5-10 is producing a very different experience if users primarily interact with the first item. Spearman's rho and Kendall's tau are useful for comparing full ranking lists rather than top-K cutoffs.
+
+The most important operational principle for divergence metrics: define thresholds before shadow testing begins, not after seeing the data. Pre-defined gates prevent post-hoc rationalization where teams adjust thresholds to match what the shadow data shows rather than what the model's risk profile requires.`,
   },
   {
     heading: 'What Shadow Mode Cannot Validate',
-    body: `This is where most interview candidates lose points. Shadow mode has fundamental limitations that practitioners must understand.\n\nFeedback loops: In recommender systems, shadow model predictions are never shown to users. Therefore you cannot observe whether users would have clicked, purchased, or engaged with shadow recommendations. Offline metrics (NDCG computed against historical data) suffer from algorithmic confounding — the historical data was generated by the champion model, so it systematically biases evaluation toward models similar to the champion. Shadow mode cannot solve this; only A/B testing can.\n\nStateful and side-effecting models: If the model's output triggers a downstream action (send email, write to database, update user state, issue a payment), the shadow model must not trigger those actions. This forces shadow models into a read-only, isolated sandbox with separate caches and read-only credentials — meaning the shadow model is never tested in the full production environment it will eventually operate in.\n\nBusiness metric validation: Revenue, retention, NPS — any metric that requires users to actually receive and act on predictions is invisible to shadow mode. Shadow mode validates technical correctness and prediction similarity, not business impact.\n\nCold-start and distribution shift: Shadow mode tests the model on today's traffic. If the model is intended to operate in a different traffic regime or is deployed months after testing, shadow results may not generalize.`,
-    keyTerms: ['Feedback loop', 'Algorithmic confounding', 'Stateful side effects', 'Business metric validation', 'Read-only shadow constraint', 'Cold-start gap'],
-    quiz: [
-      { q: 'Why can\'t shadow mode validate a recommendation model\'s business impact (CTR)?', a: 'Shadow predictions are never shown to users, so users never click or not-click on them. The feedback loop that generates click data is broken. Historical click data is confounded by the champion model\'s policy.' },
-      { q: 'A payment authorization model outputs "approve" or "decline." What special constraint must the shadow version of this model satisfy?', a: 'It must never actually process payments or update any financial state. It must run with read-only credentials and be isolated from all write paths — approval decisions must not propagate downstream.' },
-    ],
-    practice: [
-      'List three categories of models where shadow mode alone is insufficient for validation, and explain why for each.',
-      'A team says "we ran shadow mode for 2 weeks and NDCG matched perfectly — we don\'t need A/B testing." What is wrong with this argument?',
-    ],
+    body: `Understanding the limitations of shadow mode is as important as understanding its capabilities. Teams that rely on shadow mode to answer questions it cannot answer make promotion decisions on insufficient evidence, discovering missing validation only after a production regression.
+
+Business outcome impact is the primary limitation. Shadow predictions are generated but never shown to users. No user ever clicks, converts, or churns in response to a shadow recommendation. This means click-through rate, purchase conversion, fraud detection revenue impact, and user retention are all invisible to shadow mode. Offline metrics computed from historical data (NDCG against historical click data, AUC against historical fraud labels) suffer from algorithmic confounding: the historical data was generated by the champion model's predictions, systematically biasing evaluation toward models similar to the champion that produced that history. Business impact can only be measured in an A/B test where real users actually receive and respond to the new model's predictions.
+
+Stateful and side-effecting behavior is invisible in shadow mode. If the model's output triggers downstream writes (payment processing, database state updates, external API calls, user notifications), the shadow model must be isolated from all write paths via read-only credentials. This isolation means the shadow model is never tested in the full production environment it will eventually operate in. Write-path failures, cache contention under concurrent write load, and downstream API rate limiting triggered by writes are all failure modes that shadow mode cannot surface.
+
+Feedback loop effects are a particularly subtle limitation for recommendation and personalization models. In production, the champion model's recommendations shape which items users see, click, and engage with. These interactions feed back into training data for future model versions. A shadow model that generates different recommendations would, if promoted, shift the distribution of user interactions, changing the training signal for future models. Shadow mode tests the model in isolation from this feedback loop, so it cannot validate how the model's deployment will affect the training data distribution over time. This is a known limitation acknowledged by teams at Twitter, YouTube, and Netflix in their published work on recommendation system feedback loops.
+
+Distribution shift over time is also invisible to shadow mode. Shadow testing runs on current traffic. If the model is designed to operate three months from now after a new product feature launches or a user cohort shift, shadow mode on today's traffic may not be representative. This is particularly relevant for models trained on data from a different period than when shadow testing runs - the shadow results reflect current traffic, not the traffic distribution the model was trained to serve.`,
   },
   {
     heading: 'Handling Stateful Models in Shadow Mode',
-    body: `When model outputs trigger downstream writes, the shadow model must be isolated from all write paths. This is enforced through several mechanisms:\n\nRead-only IAM roles/service accounts: Shadow model pods run with credentials that only permit reads — no writes to databases, message queues, caches, or external APIs.\n\nSeparate feature caches and replicas: The shadow model reads from a read-only replica or snapshot of the feature store — never from the primary write path. This prevents shadow model reads from warming the production cache in a way that pollutes cache hit rate metrics.\n\nNo external API calls: Shadow model code must not call any transactional external API — payment processors, email services, push notification systems, CRM systems, or inventory systems.\n\nMock write path: For models that normally write predictions back to a results store (offline scoring pipelines), the shadow version writes to a dedicated shadow results table, never to the production results table.\n\nThe consequence: shadow mode tests prediction logic in a controlled sandbox, never in the full stateful operational context it will eventually run in. This is a fundamental limitation — it means some failure modes (such as cache contention, write-path latency, or side-effect sequencing bugs) can only be caught during canary.`,
-    keyTerms: ['Read-only IAM roles', 'Feature store replica', 'Write path isolation', 'Shadow results table', 'Stateful operational context'],
-    quiz: [
-      { q: 'Why does the shadow model need to read from a feature store replica rather than the production feature store?', a: 'Reading from production would warm the cache in a way that affects production cache hit rates and could confound metrics. A replica keeps shadow model reads isolated from production I/O patterns.' },
-      { q: 'A shadow model\'s prediction code calls an external inventory API to check stock levels. Why is this a problem?', a: 'Even read calls to external APIs can have side effects (rate limiting, caching, logging) and create load. More critically, if the API has any write behavior or the call triggers downstream actions, shadow isolation is violated.' },
-    ],
-    practice: [
-      'Design the IAM permission set for a shadow model deployment of a fraud scoring service that normally writes decisions to a database.',
-      'Explain why perfect shadow mode validation does not guarantee the model will behave identically once fully deployed.',
-    ],
+    body: `When model outputs trigger downstream actions with side effects - authorizing payments, writing fraud decisions to a database, sending notifications, updating user state - the shadow model must operate in a strictly isolated, read-only mode. This isolation is enforced through several complementary mechanisms, each of which addresses a different failure mode if omitted.
+
+Read-only IAM roles and service account credentials are the primary enforcement mechanism. Shadow model pods must be provisioned with service account credentials that permit only read operations: reads from feature stores, reads from model artifact stores, writes only to a dedicated shadow logging table or stream. No write access to production databases, message queues, external payment APIs, or any service that has business consequences for write operations. This is not a best-effort convention - it must be infrastructure-enforced. A shadow model that can write to production storage may write under certain code paths that are not anticipated during setup.
+
+Separate feature store replicas prevent shadow model reads from affecting production cache metrics and read patterns. If the shadow model reads from the production feature store's primary serving path, its reads warm the cache with shadow traffic patterns, potentially evicting items that production traffic would have benefited from. More subtly, shadow model reads can create confounding in feature store performance metrics - elevated cache hit rates caused by shadow traffic may obscure genuine production degradation. The correct configuration uses a read-only replica of the feature store for shadow model requests.
+
+No external API calls is a constraint that must be explicitly reviewed in the shadow model's code path. Even read operations on external APIs can have side effects: they consume API rate limit quota, create entries in audit logs, trigger billing, or cause the external service to update caches or rate limiting counters. For models that call third-party enrichment APIs (IP reputation, address validation, credit bureau lookups), shadow mode must either use a mock/replay implementation of those APIs or skip those enrichment calls and use default values.
+
+The consequence of these isolation requirements is that shadow mode tests prediction logic in a controlled sandbox, not in the full stateful operational context the model will eventually operate in. This is an inherent limitation: the isolation that makes shadow mode safe is also what prevents it from testing the full production environment. Write-path behavior, operational side effects at scale, and interactions with downstream stateful systems can only be validated during canary, when the model is running in the real production environment at limited traffic scale.`,
   },
   {
     heading: 'Cost Implications of Shadow Testing',
-    body: `Shadow mode is not free. It doubles compute for the percentage of traffic being shadowed. At scale, this is a significant budget line.\n\nUber runs real-time ML at 15M+ predictions per second at peak. Doubling compute for 100% shadow traffic would be prohibitive. Three common cost mitigations:\n\n1. Shadow only a fraction of traffic (10–20% is statistically sufficient to detect systematic divergence at production scale). 10% shadow coverage with 1 million daily requests = 100,000 shadow evaluations — sufficient for robust divergence detection.\n\n2. Use cheaper instance types for the shadow path. Shadow predictions have no latency SLA (the user is not waiting), so you can run shadow on spot/preemptible instances, batch shadow requests, or use lower-tier hardware.\n\n3. Time-bound shadow tests. Run for days or weeks, not indefinitely. Once you have sufficient comparison data, shut down the shadow endpoint.\n\n4. Shadow asynchronously from a queue. Rather than inline request duplication, write requests to a queue and process them asynchronously. This decouples shadow compute from the critical path entirely and allows shadow workloads to be run on preemptible spot instances during off-peak hours.`,
-    keyTerms: ['Shadow compute cost', 'Partial mirroring', 'Spot instances for shadow', 'Queue-based shadow', 'Time-bounded shadow testing'],
-    quiz: [
-      { q: 'Does 100% traffic mirroring always produce better validation than 10% mirroring?', a: 'Not at production scale. 10-20% mirroring is statistically sufficient to detect systematic divergence and avoids doubling compute costs. Over-shadowing is wasteful unless you specifically need full coverage for rare input patterns.' },
-      { q: 'Why can shadow model compute use spot/preemptible instances when the champion serving compute cannot?', a: 'Shadow model latency has no SLA — the user is never waiting on it. If a spot instance is preempted, a shadow request is simply lost (or retried from queue). For champion serving, a preemption would cause a user-visible timeout or error.' },
-    ],
-    practice: [
-      'Calculate the approximate daily cost impact of adding shadow mode if your service handles 500k requests/day, each costs $0.001 to serve, and you mirror 20% of traffic.',
-      'Design a queue-based shadow architecture that runs shadow compute during off-peak hours to minimize cost.',
-    ],
+    body: `Shadow mode doubles the compute cost of inference for the percentage of traffic being mirrored. This is not a small cost at production scale. A service handling 10M daily predictions at $0.50 per 1,000 inferences costs $5,000 per day for production serving. Running shadow at 100% traffic doubles this cost to $10,000 per day for the duration of the shadow test. At Uber's scale of 15M+ predictions per second at peak, 100% shadow mirroring is not operationally viable without a budget explicitly allocated for it.
+
+Partial traffic mirroring (10–20%) is the standard mitigation and is statistically sufficient for the primary purpose of shadow testing. Shadow testing aims to detect systematic divergences - cases where the shadow model behaves differently from the champion model in a way that is consistent enough to be detectable. Systematic divergences (a model that consistently scores one user segment differently, a preprocessing bug that consistently produces wrong values for null inputs) are detectable at 10% traffic sampling because they appear consistently. Random noise in model outputs is not what shadow testing is designed to detect - that requires A/B testing with statistical power analysis.
+
+Spot instance and preemptible compute for shadow inference is a natural fit because shadow inference has no latency SLA that users are waiting on. If a spot instance is preempted during shadow inference, the shadow request is simply lost (no retry needed - the user already received their response from the champion). This allows shadow infrastructure to run at spot pricing (typically 60-90% discount from on-demand pricing), dramatically reducing the incremental cost of shadow testing.
+
+Queue-based asynchronous shadow processing decouples shadow compute from the real-time serving critical path entirely. Rather than duplicating requests inline and dispatching to a shadow endpoint immediately, the gateway writes request payloads to a message queue (Kafka topic, SQS queue) without waiting for acknowledgment. A separate shadow processing service reads from the queue, runs shadow inference on a separate compute fleet, and logs the comparison results. This architecture allows shadow compute to be shifted to off-peak hours, run on preemptible instances that may have latency variability, and independently scaled without affecting the production serving fleet.
+
+Time-bounding shadow tests prevents open-ended compute spend. Define the observation window before the shadow test begins: "shadow test runs for 7 days or until we achieve 1M comparison examples, whichever comes first." At 10% of 500K daily requests, 7 days produces 350K shadow comparisons - sufficient for robust divergence detection on most production models. Indefinite shadow tests that run for weeks or months represent unmanaged compute spend and often indicate a shadow test that has not had a clear promotion decision process defined.`,
   },
   {
     heading: 'Building a Comparison Pipeline',
-    body: `Istio/Envoy/NGINX discard shadow responses. To actually compare champion and shadow outputs, you need a purpose-built comparison pipeline:\n\nStep 1 — Correlation ID injection: The gateway injects a unique request ID into both the champion and shadow requests. This ID is logged with both responses, enabling you to join them for comparison.\n\nStep 2 — Response logging: Both champion and shadow model serving code log their outputs (predictions, scores, rankings) with the correlation ID to a shared data store (Kafka topic, BigQuery table, S3 bucket).\n\nStep 3 — Comparison job: A streaming job (Flink, Spark Streaming, Dataflow) or batch job joins champion and shadow logs by correlation ID and computes divergence metrics: exact match rate, prediction delta distribution, NDCG.\n\nStep 4 — Alerting: Automated thresholds fire alerts when divergence exceeds pre-defined gates (e.g., exact match rate < 80%, NDCG < 0.85, prediction delta P95 > 0.10).\n\nStep 5 — Segment analysis: Disaggregate divergence metrics by user segment, geography, device type, and input feature ranges. Aggregate metrics can hide systematic failures on high-value segments.`,
-    keyTerms: ['Correlation ID', 'Response logging', 'Streaming join', 'Divergence alerting', 'Segment-level disaggregation'],
-    quiz: [
-      { q: 'What happens if you cannot join champion and shadow responses because the correlation ID was not propagated?', a: 'You cannot compare outputs — you have shadow traffic running but no comparison data. The shadow test produces no signal. Correlation ID propagation is a prerequisite for shadow mode to be useful.' },
-      { q: 'Why should divergence metrics be disaggregated by user segment rather than reported as aggregate averages?', a: 'Aggregate metrics can hide systematic failures on specific segments. A model with 97% overall exact match may have 60% exact match on your premium tier users or a specific geographic region. Disaggregation reveals these hidden failures.' },
-    ],
-    practice: [
-      'Sketch a streaming comparison pipeline architecture: what components are needed between the gateway and the alert dashboard?',
-      'Define three divergence gate thresholds you would set for a content recommendation model before starting shadow mode.',
-    ],
+    body: `Istio and Envoy discard shadow responses. SageMaker Shadow Testing provides some built-in comparison, but for custom metrics and segment analysis, a purpose-built comparison pipeline is necessary. The pipeline has five components that must work together: correlation ID injection, response logging, stream joining, divergence computation, and alerting.
+
+Correlation ID injection happens at the gateway layer before the request is split to champion and shadow. A unique request ID (UUID or a composite of session ID plus timestamp plus request sequence number) is injected into the HTTP headers of both the champion request and the shadow request. This ID is the join key that allows the downstream comparison job to match the champion's response to the corresponding shadow response. Without correlation ID propagation, the comparison pipeline has no basis for joining outputs and cannot produce per-request comparisons.
+
+Response logging requires both the champion model serving code and the shadow model serving code to log their outputs asynchronously alongside the correlation ID. The log destination can be a Kafka topic, a BigQuery streaming insert, or an S3 bucket with time-partitioned Parquet files. The log record includes: correlation ID, model version ID (champion or shadow), timestamp, input feature hash (for debugging disagreements), output prediction or scores, and the request's feature segment labels if segment-level analysis is required. Logging must be asynchronous and non-blocking - adding synchronous logging overhead to the serving critical path defeats the purpose.
+
+Stream joining processes champion and shadow log streams to produce comparison records. A streaming job (Flink, Spark Structured Streaming, or Dataflow) reads from both log streams, joins on correlation ID with a configurable time window (shadow responses may arrive slightly later than champion responses), and emits a comparison event containing both outputs. The comparison event is the atomic unit that downstream analysis consumes. Kafka Streams can perform this join efficiently for services where both streams are on the same Kafka cluster.
+
+Divergence computation and alerting are the outputs of the comparison pipeline. A continuous job or scheduled batch job aggregates comparison events and computes divergence metrics per feature segment, per time window, and across the full traffic. When computed metrics breach pre-defined thresholds - exact match rate below X%, prediction delta P95 above Y, NDCG below Z - automated alerts fire to PagerDuty, Slack, or the team's incident management system. These alerts must also include context: which segment is breaching the threshold, how long the breach has been active, and whether the breach is worsening or stabilizing.`,
   },
   {
     heading: 'Shadow Mode for Batch and Offline Models',
-    body: `For real-time serving, shadow mode duplicates requests inline or via queue. Batch and offline models require a different approach.\n\nParallel backtest / replay: Run both champion and shadow models against the same historical input dataset (or a recent production batch snapshot), compare outputs offline. This costs far less than doubling real-time compute — batch inference on optimized GPU instances runs at roughly 1/10th the per-prediction cost of real-time serving.\n\nLimitations of replay vs. real-time mirroring: Batch replay does not expose timing-sensitive behaviors. Models that depend on feature freshness at request time, or that behave differently under production load patterns (memory pressure, cache contention, concurrent request interference), are not fully exercised. True shadow mode on live traffic is required to catch latency regressions and feature freshness issues.\n\nFeature freshness gap: A batch replay uses features computed at a fixed historical timestamp. The shadow model in production would receive features at real-time freshness. If the model is sensitive to feature freshness (for example, a user's activity in the last 5 minutes), replay validation may miss freshness-related regressions entirely.\n\nUber's approach: Hue platform supports both endpoint shadowing (real-time traffic duplication for high-stakes models) and batch replay (for model development and lower-stakes validation). Target is 100% shadow coverage for all retraining pipelines.`,
-    keyTerms: ['Parallel backtest', 'Batch replay', 'Feature freshness gap', 'Timing-sensitive behavior', 'Endpoint shadowing vs. batch replay'],
-    quiz: [
-      { q: 'What does batch replay shadow testing miss that real-time mirroring catches?', a: 'Timing-sensitive behaviors: feature freshness effects, memory pressure and cache contention under production load, and concurrent request interference patterns that only appear at real production traffic rates.' },
-      { q: 'When is batch replay shadow testing sufficient instead of real-time mirroring?', a: 'When the model does not depend on real-time feature freshness, when the primary concern is prediction logic correctness rather than serving infrastructure behavior, and when the cost savings of batch replay outweigh the reduced coverage.' },
-    ],
-    practice: [
-      'A batch recommendation model runs nightly to pre-compute rankings for 10M users. Design a shadow validation approach that tests the new model version before it is promoted.',
-      'Explain why a real-time fraud model requires real-time traffic mirroring rather than batch replay for shadow validation.',
-    ],
+    body: `Real-time serving models can be shadow tested by duplicating live inference requests. Batch models - those that run as scheduled jobs to score large populations (nightly churn prediction, weekly credit rescoring, daily recommendation precomputation) - require a different approach because there is no live request stream to mirror.
+
+Parallel backtest or replay is the primary approach for batch models. Both the champion and shadow model are run against the same input dataset - typically the most recent production batch input snapshot or a historical batch from a known-good data window. Their outputs are compared offline: exact match rate, score delta distribution, rank correlation across user segments. This is straightforward to implement and costs approximately what a second training or scoring run would cost, since batch inference on optimized compute is much cheaper than real-time serving (typically 5-10× lower cost per prediction due to higher parallelism and no latency constraints).
+
+The fundamental limitation of batch replay compared to real-time mirroring is feature freshness. A replay uses features computed at a fixed historical timestamp. If the batch model uses features that reflect near-real-time state - "user's spend in last 24 hours," "number of active sessions in last hour" - replay from a historical snapshot may not exercise the model in the conditions it will actually face at serve time. The shadow model in production would receive features at actual freshness; replay validation misses freshness-related behavioral differences. For slowly-changing features (historical spend, account age, demographic attributes), this limitation is minor. For rapidly-changing features, real-time comparison is preferable.
+
+Load and concurrency behavior is another dimension that batch replay cannot test. Batch jobs typically run on isolated compute clusters. Shadow replay does not test how the new model performs when running in the production batch infrastructure alongside other jobs competing for I/O, memory, and compute resources. A model that takes 3 hours in isolation may take 5 hours when competing with other overnight batch jobs for the same Spark cluster resources. Staging environment validation is needed for this scenario.
+
+Uber's Hue platform distinguishes between endpoint shadowing (real-time traffic duplication for high-stakes latency-sensitive models) and batch replay shadowing (for development validation of models where the primary output is a scored dataset). Teams at Airbnb use offline replay for the majority of their recommendation model validation but require real-time shadow testing for pricing models where serving infrastructure behavior and feature freshness are both critical to validate before promotion.`,
   },
   {
-    heading: 'From Shadow to Canary — The Promotion Decision',
-    body: `Shadow mode exits with one of two outcomes: promote to canary or reject. The promotion decision should be governed by pre-defined gates, not subjective review.\n\nShadow promotion gates (defined before shadow testing begins):\n- Shadow P99 latency within X% of champion (e.g., ≤ 120%)\n- Shadow error rate below Y% (e.g., < 2%)\n- Divergence rate (exact match or NDCG) within acceptable range\n- Prediction delta P95 below Z threshold\n\nIf all gates pass after sufficient observation (enough volume across traffic patterns, including at least one traffic peak), the shadow model is ready for canary at 1% traffic.\n\nWhat shadow promotion does NOT mean: The model is better, or that it will produce better business outcomes. Shadow mode proves technical parity, not business improvement. Business improvement must be measured by A/B testing at meaningful traffic scale.\n\nUber's insight: shadow testing is used to build organizational consensus before canary exposure. Showing product managers and business analysts shadow output comparisons builds confidence without any user risk. Shadow mode has been used to invalidate experiment ideas and kill bad models before any canary exposure — saving both user experience and engineering time.`,
-    keyTerms: ['Shadow promotion gates', 'Technical parity', 'Business improvement gap', 'Organizational consensus building', 'Pre-defined gate thresholds'],
-    quiz: [
-      { q: 'Shadow mode gates have all passed. Does this mean you should skip canary and promote directly to 100%?', a: 'No. Shadow gates prove technical parity — similar latency, error rate, and prediction similarity. They say nothing about business impact (CTR, conversion, revenue). Canary and eventually A/B testing are still required to validate business outcomes.' },
-      { q: 'What is the minimum observation requirement before making a shadow promotion decision?', a: 'Enough volume to have statistical confidence in divergence metrics, AND coverage across at least one traffic peak (since peak traffic has different characteristics than off-peak). There is no fixed time — it is volume + traffic pattern coverage.' },
-    ],
-    practice: [
-      'Write a shadow mode promotion checklist with 5 specific gates and the rationale for each threshold.',
-      'Explain to a product manager why "shadow mode passed" is not the same as "the new model is better."',
-    ],
+    heading: 'From Shadow to Canary - The Promotion Decision',
+    body: `Shadow mode produces evidence for a promotion decision - it does not make the decision. The promotion decision process must be designed before shadow testing begins, not after the shadow data is collected. Post-hoc threshold adjustment to rationalize a promotion decision is the statistical equivalent of p-hacking: it produces confident-looking justifications for decisions that were made on intuition and then retroactively supported with data.
+
+Shadow promotion gates are the pre-defined criteria that must be met for promotion to canary. The gate set for a given model should reflect the model's risk profile and what shadow testing is designed to validate. A set of common gates for a recommendation model: shadow P99 latency within 120% of champion P99 (allows for cold-start effects and shadow infrastructure variance without masking significant regressions), shadow error rate below 2× the champion's baseline error rate, NDCG@10 correlation between champion and shadow above 0.88 (a threshold set from retrospective analysis of models that succeeded and failed in previous canary deployments), and prediction delta P95 below 0.08 (calibrated from analysis of score distribution widths in stable models). All gates must pass simultaneously - a model with excellent NDCG but unacceptable error rate does not pass.
+
+The observation window and sample volume requirements are distinct from the gate thresholds. Gates specify what constitutes a pass; the observation window specifies how long to collect data before evaluating the gates. The minimum observation window must include at least one instance of every significant traffic pattern: at least one weekly peak, at least one off-peak period, and at least one unusual traffic event if the service has regular unusual traffic patterns (end-of-month billing spikes, seasonal events). Statistical confidence in divergence metrics also requires sufficient sample volume - typically 500K to 1M comparison examples before divergence estimates are stable.
+
+What shadow promotion does not mean is as important as what it does mean. Passing shadow gates certifies technical parity: the shadow model does not meaningfully degrade latency, error rate, or prediction distribution relative to the champion. It does not certify that the shadow model is better than the champion - that claim requires an A/B test. It does not certify that the shadow model will produce better business outcomes - that requires measuring real user responses in canary and A/B testing. Shadow promotion is permission to expose a small fraction of real users to the new model's predictions, not permission to declare the model an improvement.
+
+Building organizational confidence through shadow mode is a valuable but underappreciated secondary outcome. When a product manager asks "how confident are we that this new recommendation model won't hurt user experience?", a shadow test result showing 97% exact match rate, sub-2% error rate, and P99 latency matching the champion provides concrete evidence that reduces the anxiety of canary exposure. Shadow mode serves as much an organizational communication function as a technical validation function: it makes the deployment risk visible and quantifiable before any user is affected.`,
   },
 ];
 
-// ── Interview Q&A ──────────────────────────────────────────────────────────────
-
 export const INTERVIEW_QA: InterviewQ[] = [
-  // ── Section 1: What is Shadow Mode ────────────────────────────────────────
   {
     difficulty: 'junior',
     question: 'What is shadow mode deployment for ML models, and how does request mirroring work?',
     keyPoints: [
       'Shadow mode deploys a new model alongside production without returning its responses to users',
       'The gateway duplicates each incoming request: original goes synchronously to the champion (response returned to user), copy goes asynchronously to the shadow (response logged and discarded)',
-      'The shadow path must be fire-and-forget — it must never block or delay the primary request path',
+      'The shadow path must be fire-and-forget - it must never block or delay the primary request path',
       'When implemented correctly, asynchronous mirroring adds < 2ms P99 overhead at the gateway',
     ],
     trap: 'Saying shadow mode is a type of canary release. They are fundamentally different: canary returns new model responses to a fraction of users; shadow mode never returns new model responses to any user.',
@@ -167,90 +144,82 @@ export const INTERVIEW_QA: InterviewQ[] = [
     difficulty: 'mid',
     question: 'A team deploys a shadow model and notices the gateway P99 increased from 85ms to 120ms. What likely went wrong?',
     keyPoints: [
-      'The shadow path is not truly asynchronous — it is blocking the primary request path',
+      'The shadow path is not truly asynchronous - it is blocking the primary request path',
       'Common cause: using NGINX mirroring, which can delay the original request if the mirror backend is slow',
       'Fix: switch to Istio or Envoy mirroring (connection-level, truly fire-and-forget) or implement proper async queuing',
       'A correct shadow implementation should add < 2ms P99 overhead regardless of shadow model latency',
     ],
-    trap: 'Blaming the shadow model\'s latency for the gateway increase. The shadow model\'s performance is irrelevant to gateway latency if the shadow path is correctly decoupled. The problem is architectural — the paths are coupled.',
+    trap: 'Blaming the shadow model\'s latency for the gateway increase. The shadow model\'s performance is irrelevant to gateway latency if the shadow path is correctly decoupled. The problem is architectural - the paths are coupled.',
   },
-
-  // ── Section 2: Shadow vs Canary vs A/B Testing ────────────────────────────
   {
     difficulty: 'junior',
     question: 'What is the difference between shadow mode, canary release, and A/B testing? When do you use each?',
     keyPoints: [
-      'Shadow mode: zero user impact, validates technical correctness and prediction similarity — cannot measure business outcomes',
-      'Canary release: 1-10% of users receive new model responses — validates technical quality and early business signals at real scale',
-      'A/B testing: two user cohorts receive different model versions in a statistically controlled experiment — measures true business impact',
+      'Shadow mode: zero user impact, validates technical correctness and prediction similarity - cannot measure business outcomes',
+      'Canary release: 1-10% of users receive new model responses - validates technical quality and early business signals at real scale',
+      'A/B testing: two user cohorts receive different model versions in a statistically controlled experiment - measures true business impact',
       'Recommended sequence: shadow → canary → A/B test → full rollout. Each step builds on the previous.',
     ],
   },
   {
     difficulty: 'senior',
-    question: 'A product manager argues that shadow mode is unnecessary since you can just start a canary at 1% traffic — which has very low blast radius. How do you respond?',
+    question: 'A product manager argues that shadow mode is unnecessary since you can just start a canary at 1% traffic - which has very low blast radius. How do you respond?',
     keyPoints: [
       'Shadow mode and canary answer different questions: shadow validates technical correctness risk-free; canary exposes real users (even 1% = thousands of users at scale)',
-      'Shadow mode is essential for major changes: new model architecture, different feature schema, new output format — where even 1% canary exposure could cause user-visible failures',
-      'Shadow mode validates serving infrastructure separately from model quality — container changes, hardware migrations, and framework upgrades should be shadow-tested before any canary',
+      'Shadow mode is essential for major changes: new model architecture, different feature schema, new output format - where even 1% canary exposure could cause user-visible failures',
+      'Shadow mode validates serving infrastructure separately from model quality - container changes, hardware migrations, and framework upgrades should be shadow-tested before any canary',
       'At 1M daily users, 1% canary = 10,000 users experiencing a potential regression. Shadow mode costs zero users.',
     ],
-    trap: 'Agreeing that shadow is unnecessary. Shadow mode is the appropriate first step for high-risk changes precisely because it has zero blast radius — which no canary percentage can match.',
+    trap: 'Agreeing that shadow is unnecessary. Shadow mode is the appropriate first step for high-risk changes precisely because it has zero blast radius - which no canary percentage can match.',
   },
-
-  // ── Section 3: Implementing Traffic Mirroring ──────────────────────────────
   {
     difficulty: 'mid',
     question: 'Name two ways to implement traffic mirroring in a Kubernetes ML serving environment and compare their trade-offs.',
     keyPoints: [
       'Istio VirtualService with mirror and mirrorPercentage: connection-level fire-and-forget, does not affect primary path latency, requires service mesh setup',
-      'Envoy request_mirror_policies: similar behavior, lower-level control, requires more configuration — used when not using Istio',
-      'NGINX mirror directive: simpler to set up but known pitfall — can delay primary request if mirror backend is slow',
-      'AWS SageMaker shadow testing: managed first-class support with built-in comparison dashboard — appropriate for teams on AWS infrastructure',
+      'Envoy request_mirror_policies: similar behavior, lower-level control, requires more configuration - used when not using Istio',
+      'NGINX mirror directive: simpler to set up but known pitfall - can delay primary request if mirror backend is slow',
+      'AWS SageMaker shadow testing: managed first-class support with built-in comparison dashboard - appropriate for teams on AWS infrastructure',
     ],
   },
   {
     difficulty: 'junior',
     question: 'You implement shadow mode using NGINX mirroring. Users start reporting increased latency. What is the likely cause?',
     keyPoints: [
-      'NGINX mirroring can couple the primary request path to the mirror path — if the shadow backend is slow, NGINX may delay the original request',
+      'NGINX mirroring can couple the primary request path to the mirror path - if the shadow backend is slow, NGINX may delay the original request',
       'This violates the fire-and-forget requirement for shadow mirroring',
       'Fix: switch to Istio or Envoy mirroring, which handle mirroring at the TCP connection level and are truly asynchronous',
       'Always load test shadow mirroring under production-like conditions before enabling in production',
     ],
   },
-
-  // ── Section 4: Divergence Metrics ─────────────────────────────────────────
   {
     difficulty: 'mid',
     question: 'Your champion and shadow fraud models have a 96% exact match rate. Can you confidently promote the shadow to canary? What additional analysis is needed?',
     keyPoints: [
-      '96% exact match means they disagree on 4% of predictions — at high-stakes transaction volumes, this could be thousands of misclassified transactions per day',
-      'Segment-level analysis is essential: disaggregate disagreements by transaction value tier, user segment, merchant category — the 4% may be concentrated on high-value transactions',
+      '96% exact match means they disagree on 4% of predictions - at high-stakes transaction volumes, this could be thousands of misclassified transactions per day',
+      'Segment-level analysis is essential: disaggregate disagreements by transaction value tier, user segment, merchant category - the 4% may be concentrated on high-value transactions',
       'Analyze the direction of disagreement: is the shadow more aggressive (more false positives) or more permissive (more false negatives) than the champion?',
-      'At minimum, review disagreement samples manually — understand whether disagreements represent improvements, regressions, or neutral differences',
+      'At minimum, review disagreement samples manually - understand whether disagreements represent improvements, regressions, or neutral differences',
     ],
-    trap: 'Treating aggregate exact match rate as sufficient validation. High-value edge cases are often in the tail of the distribution — they require segment-level analysis, not aggregate statistics.',
+    trap: 'Treating aggregate exact match rate as sufficient validation. High-value edge cases are often in the tail of the distribution - they require segment-level analysis, not aggregate statistics.',
   },
   {
     difficulty: 'senior',
     question: 'Design a divergence comparison pipeline for a recommendation model serving 500k users daily. What metrics would you compute, and what thresholds would you use to gate shadow promotion?',
     keyPoints: [
-      'NDCG@10: rank correlation at top 10 recommendations — gate threshold ≥ 0.92 (shadow must produce similar top-10 lists)',
-      'Exact match rate on position-1 recommendation (the item most users click first) — gate threshold ≥ 90%',
-      'Prediction delta P95 for raw scores — gate threshold ≤ 0.05 (scores should not diverge dramatically)',
-      'Segment-level NDCG disaggregated by user activity tier, platform (mobile/web), and geography — detect systematic regressions on specific cohorts',
-      'Define gates before shadow testing begins — not after seeing the data — to prevent confirmation bias',
+      'NDCG@10: rank correlation at top 10 recommendations - gate threshold ≥ 0.92 (shadow must produce similar top-10 lists)',
+      'Exact match rate on position-1 recommendation (the item most users click first) - gate threshold ≥ 90%',
+      'Prediction delta P95 for raw scores - gate threshold ≤ 0.05 (scores should not diverge dramatically)',
+      'Segment-level NDCG disaggregated by user activity tier, platform (mobile/web), and geography - detect systematic regressions on specific cohorts',
+      'Define gates before shadow testing begins - not after seeing the data - to prevent confirmation bias',
     ],
   },
-
-  // ── Section 5: What Shadow Mode Cannot Validate ────────────────────────────
   {
     difficulty: 'mid',
     question: 'Why can\'t shadow mode validate the business impact of a new recommendation model, even if offline NDCG metrics look excellent?',
     keyPoints: [
-      'Shadow predictions are never shown to users — no user ever clicks or not-clicks on a shadow recommendation',
-      'Offline NDCG computed against historical click data is confounded by the champion model\'s historical policy — the data was generated by users responding to champion recommendations, not shadow recommendations',
+      'Shadow predictions are never shown to users - no user ever clicks or not-clicks on a shadow recommendation',
+      'Offline NDCG computed against historical click data is confounded by the champion model\'s historical policy - the data was generated by users responding to champion recommendations, not shadow recommendations',
       'This is algorithmic confounding: historical click data systematically favors models similar to the champion that produced that history',
       'Business impact (CTR, revenue, engagement) requires an A/B test where real users actually receive and act on the new model\'s recommendations',
     ],
@@ -258,43 +227,39 @@ export const INTERVIEW_QA: InterviewQ[] = [
   },
   {
     difficulty: 'senior',
-    question: 'Your team has a payment authorization model. Shadow mode tests pass perfectly — latency is good, predictions look similar. A junior engineer proposes deploying directly to 100%. What risks is she missing?',
+    question: 'Your team has a payment authorization model. Shadow mode tests pass perfectly - latency is good, predictions look similar. A junior engineer proposes deploying directly to 100%. What risks is she missing?',
     keyPoints: [
-      'Shadow mode ran the model in a read-only isolated sandbox — it was never tested with live write paths (payment processing, fraud database writes, account state updates)',
-      'Stateful side effects at scale may differ from sandbox behavior — cache contention, write-path latency, database lock behavior under load',
+      'Shadow mode ran the model in a read-only isolated sandbox - it was never tested with live write paths (payment processing, fraud database writes, account state updates)',
+      'Stateful side effects at scale may differ from sandbox behavior - cache contention, write-path latency, database lock behavior under load',
       'Shadow mode cannot detect that the new model changes the approve/decline decision on a specific class of edge-case transactions at scale (rare inputs that appear more frequently at 100% traffic)',
-      'Operational readiness is also missing: rollback procedures, alerting thresholds for the new model, runbooks — canary provides a low-blast-radius environment to validate these',
+      'Operational readiness is also missing: rollback procedures, alerting thresholds for the new model, runbooks - canary provides a low-blast-radius environment to validate these',
     ],
   },
-
-  // ── Section 6: Handling Stateful Models ───────────────────────────────────
   {
     difficulty: 'junior',
     question: 'What constraints must a shadow model satisfy when the production model\'s outputs trigger downstream database writes?',
     keyPoints: [
-      'Shadow model must run with read-only credentials — no write access to production databases, message queues, or external APIs',
+      'Shadow model must run with read-only credentials - no write access to production databases, message queues, or external APIs',
       'If the shadow model needs to store its predictions for comparison, it writes to a dedicated shadow results table, never to the production results table',
       'The shadow model must not call any external API that has side effects (payment processors, email services, inventory systems)',
-      'Feature store reads should come from a read-only replica, not the production write path — to avoid polluting production cache metrics',
+      'Feature store reads should come from a read-only replica, not the production write path - to avoid polluting production cache metrics',
     ],
   },
   {
     difficulty: 'mid',
     question: 'What failure mode can shadow mode NOT catch for a stateful model, even with perfect shadow gate results?',
     keyPoints: [
-      'Shadow model runs in a sandbox with read-only credentials and isolated caches — it is never tested in the full production stateful context',
+      'Shadow model runs in a sandbox with read-only credentials and isolated caches - it is never tested in the full production stateful context',
       'Failures that only appear in the write path (database lock contention, cache invalidation race conditions, downstream API rate limiting triggered by writes) are invisible to shadow mode',
       'Once the model is promoted and starts actually writing to production systems, new failure modes can emerge that shadow testing never exposed',
       'This is why canary is still needed after shadow: canary runs the model in the real stateful environment at low traffic, catching write-path and operational issues that shadow never saw',
     ],
   },
-
-  // ── Section 7: Cost Implications ─────────────────────────────────────────
   {
     difficulty: 'junior',
     question: 'True or false: shadow mode is a free validation technique with no additional compute cost. Explain.',
     keyPoints: [
-      'False — shadow mode doubles compute for the percentage of traffic being mirrored',
+      'False - shadow mode doubles compute for the percentage of traffic being mirrored',
       'At 100% mirroring, you pay for two model inference calls for every user request',
       'Mitigations: shadow only 10-20% of traffic (statistically sufficient for systematic divergence detection), use spot/preemptible instances for the shadow path, time-bound the shadow test',
       'Queue-based shadow (write requests to a queue, process asynchronously) allows shadow compute to run on spot instances during off-peak hours',
@@ -305,14 +270,12 @@ export const INTERVIEW_QA: InterviewQ[] = [
     difficulty: 'senior',
     question: 'Design a cost-efficient shadow testing strategy for a service handling 2M requests per day at $0.50 per 1,000 inferences.',
     keyPoints: [
-      'Shadow only 10% of traffic (200k requests/day) — sufficient statistical coverage at 1/10th the cost of 100% mirroring',
+      'Shadow only 10% of traffic (200k requests/day) - sufficient statistical coverage at 1/10th the cost of 100% mirroring',
       'Route shadow requests through a queue (Kafka/SQS) and process asynchronously on spot/preemptible GPU instances during off-peak hours (2am-6am)',
-      'Time-bound the shadow test: 7 days provides 1.4M shadow evaluations — sufficient for robust divergence detection',
+      'Time-bound the shadow test: 7 days provides 1.4M shadow evaluations - sufficient for robust divergence detection',
       'Total incremental cost: 200k × 7 days × $0.0005 = $700 vs. $7,000 for 100% mirroring at full compute cost. Plus spot discounts reduce this further.',
     ],
   },
-
-  // ── Section 8: Comparison Pipeline ────────────────────────────────────────
   {
     difficulty: 'mid',
     question: 'Walk through the components needed to build a shadow mode comparison pipeline from gateway to alert.',
@@ -324,8 +287,6 @@ export const INTERVIEW_QA: InterviewQ[] = [
       'Dashboard: segment-level divergence metrics disaggregated by user tier, geography, input feature ranges',
     ],
   },
-
-  // ── Section 9: Batch vs Real-Time ─────────────────────────────────────────
   {
     difficulty: 'mid',
     question: 'Your ML model runs as a nightly batch job scoring 5M users. How would you implement shadow mode for this model?',
@@ -333,27 +294,25 @@ export const INTERVIEW_QA: InterviewQ[] = [
       'Parallel backtest / replay: run champion and shadow models against the same input snapshot from the most recent production batch run',
       'Compare outputs offline: exact match rate, score delta distribution, rank correlation across user segments',
       'Cost advantage: batch inference on optimized GPU instances costs ~1/10th per prediction vs real-time serving',
-      'Limitation: replay does not test feature freshness behavior or under-load behavior — but these matter less for a nightly batch job than for real-time models',
+      'Limitation: replay does not test feature freshness behavior or under-load behavior - but these matter less for a nightly batch job than for real-time models',
     ],
   },
   {
     difficulty: 'senior',
     question: 'When is batch replay shadow testing insufficient, and real-time traffic mirroring required? Give a concrete example.',
     keyPoints: [
-      'Batch replay is insufficient when the model\'s behavior depends on real-time feature freshness — e.g., a fraud model using "transactions in the last 5 minutes" as a feature',
+      'Batch replay is insufficient when the model\'s behavior depends on real-time feature freshness - e.g., a fraud model using "transactions in the last 5 minutes" as a feature',
       'Real example: a real-time fraud model replay uses features computed at a fixed historical timestamp; in production, those features are computed at request time. The replay misses freshness-driven behavioral differences.',
       'Also insufficient when testing serving infrastructure: latency regressions, memory pressure under concurrent load, and cache behavior only appear under real production traffic patterns',
-      'Rule of thumb: if the model is latency-sensitive, uses real-time features, or involves infrastructure changes — use real-time mirroring, not replay',
+      'Rule of thumb: if the model is latency-sensitive, uses real-time features, or involves infrastructure changes - use real-time mirroring, not replay',
     ],
   },
-
-  // ── Section 10: Shadow to Canary Promotion ────────────────────────────────
   {
     difficulty: 'junior',
     question: 'Shadow mode tests all passed. What does this mean, and what is the next step?',
     keyPoints: [
       'Shadow gates passing means the new model shows technical parity: similar latency, error rate, and prediction similarity to the champion',
-      'It does NOT mean the model is better — business impact (CTR, conversion, revenue) is unknown',
+      'It does NOT mean the model is better - business impact (CTR, conversion, revenue) is unknown',
       'Next step: promote to canary at 1% traffic to begin measuring real user impact at low blast radius',
       'Shadow mode is the prerequisite for canary, not a replacement for it',
     ],
@@ -363,15 +322,13 @@ export const INTERVIEW_QA: InterviewQ[] = [
     question: 'Define the gates you would set before starting shadow mode for a ranking model, and explain why each threshold was chosen.',
     keyPoints: [
       'Shadow P99 ≤ 120% of champion P99: shadow latency must not be dramatically worse; 20% headroom accounts for cold-start and jitter without masking real regressions',
-      'Shadow error rate < 2%: double the champion\'s typical 1% error rate — allows some tolerance for shadow environment differences',
+      'Shadow error rate < 2%: double the champion\'s typical 1% error rate - allows some tolerance for shadow environment differences',
       'NDCG@10 ≥ 0.90: shadow rankings must correlate highly with champion at top positions; 0.90 threshold balances stability with allowing improvements',
-      'Prediction delta P95 ≤ 0.08: absolute score difference at the 95th percentile must be small — detects systematic shifts in model confidence calibration',
+      'Prediction delta P95 ≤ 0.08: absolute score difference at the 95th percentile must be small - detects systematic shifts in model confidence calibration',
       'All gates pre-defined before shadow testing begins to prevent post-hoc rationalization',
     ],
   },
 ];
-
-// ── AI Prompt ──────────────────────────────────────────────────────────────────
 
 export const AI_PROMPT_TEMPLATE = (
   mirrorPct: number,

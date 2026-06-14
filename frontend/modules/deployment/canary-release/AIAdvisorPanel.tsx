@@ -36,16 +36,16 @@ function staticFallback(props: Props): string {
     const faultDesc = fault === 'latency' ? `P99 spiking to ${canary.p99.toFixed(0)}ms`
       : fault === 'errors' ? `error rate at ${canary.errorRate.toFixed(2)}%`
       : `PSI at ${canary.psi.toFixed(3)}`;
-    return `Active fault detected — canary ${faultDesc}. Gates are failing. If auto-rollback is off, manually roll back now. Investigate the fault before re-promoting. Keep the canary pod at 0% traffic for diagnosis.`;
+    return `Active fault detected - canary ${faultDesc}. Gates are failing. If auto-rollback is off, manually roll back now. Investigate the fault before re-promoting. Keep the canary pod at 0% traffic for diagnosis.`;
   }
   if (gates.p99 === 'fail')
-    return `P99 gate failing — canary latency ${canary.p99.toFixed(0)}ms exceeds 105% of champion (${champion.p99.toFixed(0)}ms). Hold and investigate before promoting. Check for warm-up issues or memory pressure.`;
+    return `P99 gate failing - canary latency ${canary.p99.toFixed(0)}ms exceeds 105% of champion (${champion.p99.toFixed(0)}ms). Hold and investigate before promoting. Check for warm-up issues or memory pressure.`;
   if (gates.errorRate === 'fail')
-    return `Error rate gate failing — canary at ${canary.errorRate.toFixed(2)}%, threshold is 1%. Do not promote. Check service logs for 5xx causes.`;
+    return `Error rate gate failing - canary at ${canary.errorRate.toFixed(2)}%, threshold is 1%. Do not promote. Check service logs for 5xx causes.`;
   if (gates.psi === 'fail')
-    return `PSI gate failing at ${canary.psi.toFixed(3)} — prediction distribution has shifted. Investigate preprocessing differences between champion and canary before promoting.`;
+    return `PSI gate failing at ${canary.psi.toFixed(3)} - prediction distribution has shifted. Investigate preprocessing differences between champion and canary before promoting.`;
   if (elapsed < minWindow)
-    return `All gates passing at ${stage}% traffic — ${minWindow - elapsed}s remaining in the observation window. Do not promote early. Time in window is as important as gate status.`;
+    return `All gates passing at ${stage}% traffic - ${minWindow - elapsed}s remaining in the observation window. Do not promote early. Time in window is as important as gate status.`;
   return `All gates passing, observation window complete at ${stage}% traffic. Safe to promote to ${STAGES[stageIdx + 1] ?? 100}%. Champion P99: ${champion.p99.toFixed(0)}ms, Canary: ${canary.p99.toFixed(0)}ms, PSI: ${canary.psi.toFixed(3)}.`;
 }
 

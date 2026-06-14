@@ -41,7 +41,7 @@ function ProfileEditor({ version, profile, onChange, onInsight }: ProfileEditorP
   return (
     <div>
       <p className={clsx('text-xs font-mono font-semibold uppercase tracking-widest mb-2', accent)}>
-        {version} — healthy baseline
+        {version} - healthy baseline
       </p>
       <div className="grid grid-cols-3 gap-2">
         {fields.map(({ key, label, min, max, step }) => (

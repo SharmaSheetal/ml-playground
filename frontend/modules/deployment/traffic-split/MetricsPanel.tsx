@@ -102,8 +102,8 @@ interface MetricsPanelProps {
 export function MetricsPanel({ metrics, v1Degraded, v2Degraded, v1Traffic }: MetricsPanelProps) {
   return (
     <div className="grid grid-cols-2 gap-4">
-      <MetricCard version="v1" label={`v1 Stable — ${v1Traffic}%`}      metrics={metrics.v1} degraded={v1Degraded} />
-      <MetricCard version="v2" label={`v2 Canary — ${100 - v1Traffic}%`} metrics={metrics.v2} degraded={v2Degraded} />
+      <MetricCard version="v1" label={`v1 Stable - ${v1Traffic}%`}      metrics={metrics.v1} degraded={v1Degraded} />
+      <MetricCard version="v2" label={`v2 Canary - ${100 - v1Traffic}%`} metrics={metrics.v2} degraded={v2Degraded} />
     </div>
   );
 }

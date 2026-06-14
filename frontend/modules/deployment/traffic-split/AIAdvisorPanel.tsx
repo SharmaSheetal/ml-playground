@@ -24,11 +24,11 @@ function staticFallback(v1Traffic: number, metrics: Props['metrics']): string {
   const v2 = metrics.v2;
   const v1 = metrics.v1;
   if (v2.status === 'degraded' && v2.p99 > 1000)
-    return `v2 is clearly degraded — P99 at ${v2.p99}ms is unacceptable. Roll back to 100% v1 immediately and keep the canary pod running at 0% for diagnosis. Do not proceed until you understand the root cause.`;
+    return `v2 is clearly degraded - P99 at ${v2.p99}ms is unacceptable. Roll back to 100% v1 immediately and keep the canary pod running at 0% for diagnosis. Do not proceed until you understand the root cause.`;
   if (v2.status === 'degraded')
     return `v2 shows early degradation signals. Hold at the current split (${100 - v1Traffic}% canary) and monitor for the next 10 minutes. If P99 continues to climb, roll back. Do not increase canary traffic while metrics are unstable.`;
   if (v1Traffic > 70)
-    return `System looks healthy. v2 P99 is ${v2.p99}ms vs v1's ${v1.p99}ms — within acceptable range. Safe to increase canary traffic to ${Math.min(100 - v1Traffic + 10, 50)}% and observe for another 15 minutes.`;
+    return `System looks healthy. v2 P99 is ${v2.p99}ms vs v1's ${v1.p99}ms - within acceptable range. Safe to increase canary traffic to ${Math.min(100 - v1Traffic + 10, 50)}% and observe for another 15 minutes.`;
   return `Both versions healthy. At ${100 - v1Traffic}% canary you are past the high-risk window. Continue stepping up by 10–20% increments with 15-minute observation windows at each stage.`;
 }
 

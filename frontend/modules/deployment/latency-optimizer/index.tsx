@@ -10,7 +10,7 @@ import { AIAdvisorPanel } from './AIAdvisorPanel';
 function Delta({ current, base, invert = false }: { current: number; base: number; invert?: boolean }) {
   const pct = ((current - base) / base) * 100;
   const improved = invert ? pct > 0 : pct < 0;
-  if (Math.abs(pct) < 0.5) return <span className="text-gray-400 text-[10px] font-mono">—</span>;
+  if (Math.abs(pct) < 0.5) return <span className="text-gray-400 text-[10px] font-mono">-</span>;
   return (
     <span className={clsx(
       'flex items-center gap-0.5 text-[10px] font-mono font-semibold',
@@ -79,7 +79,7 @@ export function LatencyOptimizerSimulator() {
   } = useSimulation();
 
   const QUANT_OPTIONS: { value: QuantLevel; label: string; desc: string }[] = [
-    { value: 'fp32', label: 'FP32',  desc: 'Baseline — full precision, no speedup' },
+    { value: 'fp32', label: 'FP32',  desc: 'Baseline - full precision, no speedup' },
     { value: 'fp16', label: 'FP16',  desc: '~47% faster, < 0.1% accuracy drop, widely supported' },
     { value: 'int8', label: 'INT8',  desc: '~60% faster, < 1% accuracy drop, requires calibration' },
   ];

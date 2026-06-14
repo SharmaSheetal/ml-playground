@@ -29,20 +29,20 @@ const SOURCE_LABEL: Record<LLMSource, { label: string; color: string }> = {
 function staticFallback(p: Props): string {
   const { gates, divergence, shadow, champion, fault } = p;
   if (fault === 'latency')
-    return `Shadow latency is ${shadow.p99.toFixed(0)}ms vs champion ${champion.p99.toFixed(0)}ms — exceeding the 1.2× gate. The shadow model has a serving performance regression. Investigate before promoting to canary. Check for memory leaks, missing model optimization (quantization, TensorRT), or framework incompatibility.`;
+    return `Shadow latency is ${shadow.p99.toFixed(0)}ms vs champion ${champion.p99.toFixed(0)}ms - exceeding the 1.2× gate. The shadow model has a serving performance regression. Investigate before promoting to canary. Check for memory leaks, missing model optimization (quantization, TensorRT), or framework incompatibility.`;
   if (fault === 'divergence')
-    return `Exact match rate dropped to ${divergence.exactMatch.toFixed(1)}% — well below the 80% gate. The shadow model is making systematically different predictions. Do not promote to canary. Investigate preprocessing differences, feature schema changes, or training data issues.`;
+    return `Exact match rate dropped to ${divergence.exactMatch.toFixed(1)}% - well below the 80% gate. The shadow model is making systematically different predictions. Do not promote to canary. Investigate preprocessing differences, feature schema changes, or training data issues.`;
   if (fault === 'errors')
-    return `Shadow error rate is ${shadow.errorRate.toFixed(2)}% — exceeding the 2% gate. The shadow model has serving errors. Roll back shadow traffic and investigate serving configuration, missing dependencies, or model loading failures.`;
+    return `Shadow error rate is ${shadow.errorRate.toFixed(2)}% - exceeding the 2% gate. The shadow model has serving errors. Roll back shadow traffic and investigate serving configuration, missing dependencies, or model loading failures.`;
   if (gates.latency === 'fail')
     return `Shadow P99 ${shadow.p99.toFixed(0)}ms exceeds 120% of champion ${champion.p99.toFixed(0)}ms. Hold shadow and investigate serving performance before promotion.`;
   if (gates.divergence === 'fail')
-    return `Exact match rate ${divergence.exactMatch.toFixed(1)}% below 80% gate. Predictions are diverging systematically — hold shadow and investigate model differences before any canary exposure.`;
+    return `Exact match rate ${divergence.exactMatch.toFixed(1)}% below 80% gate. Predictions are diverging systematically - hold shadow and investigate model differences before any canary exposure.`;
   if (gates.ndcg === 'fail')
     return `NDCG ${divergence.ndcg.toFixed(3)} below 0.85 gate. Ranking quality has degraded. Shadow model is reordering recommendations in ways that may harm user experience.`;
   if (gates.errors === 'fail')
     return `Shadow error rate ${shadow.errorRate.toFixed(2)}% exceeds 2% gate. Investigate serving errors before promotion.`;
-  return `All shadow gates passing. Exact match ${divergence.exactMatch.toFixed(1)}%, NDCG ${divergence.ndcg.toFixed(3)}, shadow P99 ${shadow.p99.toFixed(0)}ms. Continue observation — after sufficient coverage of traffic patterns including at least one peak period, shadow model is ready for canary at 1%.`;
+  return `All shadow gates passing. Exact match ${divergence.exactMatch.toFixed(1)}%, NDCG ${divergence.ndcg.toFixed(3)}, shadow P99 ${shadow.p99.toFixed(0)}ms. Continue observation - after sufficient coverage of traffic patterns including at least one peak period, shadow model is ready for canary at 1%.`;
 }
 
 export function AIAdvisorPanel(props: Props) {
