@@ -22,3 +22,6 @@ docker-compose.override.yml
 frontend/tsconfig.tsbuildinfo
 
 docs/
+.DS_Store
+package-lock.json
+MLOps Playground.pdf
